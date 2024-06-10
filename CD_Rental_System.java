@@ -634,8 +634,6 @@ public class CD_Rental_System extends JFrame {
             }
             reader.close();
         } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(cartPanel, "Error loading cart information.", "Error", JOptionPane.ERROR_MESSAGE);
         }
         
         // Set total quantity and price labels
