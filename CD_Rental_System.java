@@ -1,0 +1,851 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+
+public class CD_Rental_System extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private double ratePerDay = 0.1;
+
+    public CD_Rental_System() {
+        setTitle("Retro CD Rental System");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        // Create the main menu panel with padding
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(4, 1, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Add padding
+        
+        JPanel HomePanel = showHome(panel); // Pass mainMenuFrame instance
+        
+    }
+
+    private JPanel showHome(JPanel panel) { // Corrected the parameter type to JPanel
+        JLabel welcomeLabel = new JLabel("Retro CD Rental System", SwingConstants.CENTER);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        panel.add(welcomeLabel);
+
+        JButton registerButton = new JButton("Register");
+        JButton loginButton = new JButton("Login");
+        JButton exitButton = new JButton("Exit");
+
+        panel.add(registerButton);
+        panel.add(loginButton);
+        panel.add(exitButton);
+
+        add(panel);
+        
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showRegisterDialog();
+            }
+        });
+
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showLoginDialog(new JFrame());
+            }
+        });
+
+        exitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        
+        return panel;
+    }
+
+    private void showRegisterDialog() {
+        JDialog registerDialog = new JDialog(this, "Register", true);
+        registerDialog.setSize(300, 200);
+        registerDialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+
+        JLabel usernameLabel = new JLabel("Username: ");
+        usernameField = new JTextField();
+        JLabel passwordLabel = new JLabel("Password: ");
+        passwordField = new JPasswordField();
+
+        JButton registerButton = new JButton("Register");
+
+        panel.add(usernameLabel);
+        panel.add(usernameField);
+        panel.add(passwordLabel);
+        panel.add(passwordField);
+        panel.add(new JLabel()); // Empty cell to align the button
+        panel.add(registerButton);
+
+        registerDialog.add(panel);
+
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = usernameField.getText();
+                String password = new String(passwordField.getPassword());
+
+                if (!username.isEmpty() && !password.isEmpty()) {
+                    if (isUsernameTaken(username)) {
+                        JOptionPane.showMessageDialog(registerDialog, "Username is already taken. Please choose another one.", "Error", JOptionPane.ERROR_MESSAGE);
+                    } else if (!isValidPassword(password)) {
+                        JOptionPane.showMessageDialog(registerDialog, "Password must be at least 8 characters long and include at least one number, one special character, and one capital letter.", "Error", JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        try {
+                            // Check if the directory exists, if not, create it
+                            File recordsDir = new File("records");
+                            if (!recordsDir.exists()) {
+                                recordsDir.mkdir();
+                            }
+
+                            // Create the users.txt file inside records folder
+                            File userFile = new File(recordsDir, "users.txt");
+                            if (!userFile.exists()) {
+                                userFile.createNewFile();
+                            }
+
+                            // Write user data to the file
+                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(userFile, true))) {
+                                writer.write(username + " " + password);
+                                writer.newLine();
+                                System.out.println("User registered: " + username + " " + password);  // Debug print
+                                System.out.println("Data saved in: " + userFile.getAbsolutePath());  // Debug print for file path
+                                JOptionPane.showMessageDialog(registerDialog, "User registered! Redirecting to main menu...");
+                                registerDialog.dispose();
+                            } catch (IOException ioException) {
+                                ioException.printStackTrace();
+                                JOptionPane.showMessageDialog(registerDialog, "Error registering user.", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } catch (IOException ioException) {
+                            ioException.printStackTrace();
+                            JOptionPane.showMessageDialog(registerDialog, "Error creating user file.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(registerDialog, "Please fill in both fields.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        registerDialog.setVisible(true);
+    }
+
+    private boolean isUsernameTaken(String username) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("records/users.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts[0].equals(username)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private boolean isValidPassword(String password) {
+        // Password must be at least 8 characters long and include at least one number, one special character, and one capital letter.
+        String pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+=!]).{8,}$";
+        return Pattern.matches(pattern, password);
+    }
+
+    private String showLoginDialog(JFrame mainMenuFrame) {
+        JDialog loginDialog = new JDialog(this, "Login", true);
+        loginDialog.setSize(300, 200);
+        loginDialog.setLocationRelativeTo(this);
+
+        JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+
+        JLabel usernameLabel = new JLabel("Username: ");
+        usernameField = new JTextField();
+        JLabel passwordLabel = new JLabel("Password: ");
+        passwordField = new JPasswordField();
+
+        JButton loginButton = new JButton("Login");
+
+        panel.add(usernameLabel);
+        panel.add(usernameField);
+        panel.add(passwordLabel);
+        panel.add(passwordField);
+        panel.add(new JLabel()); // Empty cell to align the button
+        panel.add(loginButton);
+
+        loginDialog.add(panel);
+
+            loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = usernameField.getText();
+                String password = new String(passwordField.getPassword());
+
+                if (authenticateUser(username, password)) {
+                    JOptionPane.showMessageDialog(loginDialog, "Login successful! Redirecting to main menu...");
+                    loginDialog.dispose();
+                    mainMenuFrame.setSize(900, 400);
+                    mainMenuFrame.setLocationRelativeTo(null);
+                    showMainMenu(mainMenuFrame, username);
+                    setVisible(false);
+                } else {
+                    JOptionPane.showMessageDialog(loginDialog, "Invalid username or password.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        loginDialog.setVisible(true);
+        return usernameField.getText(); // Return the username
+    }
+
+
+    private boolean authenticateUser(String username, String password) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("records/users.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts.length == 2 && parts[0].equals(username) && parts[1].equals(password)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private void showMainMenu(JFrame mainMenuFrame, String username) {
+        mainMenuFrame.getContentPane().removeAll(); // Clear current content
+        mainMenuFrame.revalidate(); // Refresh frame
+        mainMenuFrame.repaint(); // Repaint frame
+
+        // Create panel for buttons
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 4));
+
+        // Create buttons
+        JButton catalogButton = new JButton("Catalog");
+        JButton cartButton = new JButton("Cart");
+        JButton rentedButton = new JButton("Rented");
+
+        // Add buttons to panel
+        buttonPanel.add(catalogButton);
+        buttonPanel.add(cartButton);
+        buttonPanel.add(rentedButton);
+
+        // Add action listeners
+        catalogButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JPanel catalogPanel = createCatalogPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
+                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
+                mainMenuFrame.add(catalogPanel, BorderLayout.CENTER); // Add catalog panel
+                mainMenuFrame.revalidate(); // Refresh frame
+                mainMenuFrame.repaint(); // Repaint frame
+            }
+        });
+
+        cartButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JPanel cartPanel = createCartPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
+                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
+                mainMenuFrame.add(cartPanel, BorderLayout.CENTER); // Add catalog panel
+                mainMenuFrame.revalidate(); // Refresh frame
+                mainMenuFrame.repaint(); // Repaint frame
+            }
+        });
+
+        rentedButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Implement functionality for rented button
+            }
+        });
+
+
+        Runnable backButtonAction = () -> {
+            int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+            if (confirmDelete == JOptionPane.YES_OPTION) {
+                mainMenuFrame.dispose(); // Close the current frame
+                CD_Rental_System newSystem = new CD_Rental_System(); // Create a new instance of CD_Rental_System
+                newSystem.setVisible(true); // Make the new frame visible
+            }
+        };
+
+        showHeader(mainMenuFrame, "Main Menu", username, backButtonAction);
+
+        // Add button panel to main frame
+        mainMenuFrame.add(buttonPanel, BorderLayout.CENTER);
+
+        mainMenuFrame.setVisible(true);
+    }
+    
+    private static void showHeader(JFrame frame, String title, String username, Runnable backButtonAction) {
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setBackground(Color.WHITE);
+
+        // Create and add button to the left of the title
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> backButtonAction.run()); // Trigger the provided function when the button is clicked
+        titlePanel.add(backButton, BorderLayout.WEST);
+
+        JLabel pageTitleLabel = new JLabel(title, SwingConstants.CENTER);
+        pageTitleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titlePanel.add(pageTitleLabel, BorderLayout.CENTER);
+
+        JLabel welcomeLabel = new JLabel("User: " + username, SwingConstants.RIGHT);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        titlePanel.add(welcomeLabel, BorderLayout.EAST);
+
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        frame.add(titlePanel, BorderLayout.NORTH);
+    }
+    
+    private JPanel headerPanel(JFrame frame, String title, String username, Runnable backButtonAction) {
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Color.WHITE);
+
+        // Create and add button to the left of the title
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> backButtonAction.run()); // Trigger the provided function when the button is clicked
+        headerPanel.add(backButton, BorderLayout.WEST);
+
+        JLabel pageTitleLabel = new JLabel(title, SwingConstants.CENTER);
+        pageTitleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        headerPanel.add(pageTitleLabel, BorderLayout.CENTER);
+
+        JLabel welcomeLabel = new JLabel("User: " + username, SwingConstants.RIGHT);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        headerPanel.add(welcomeLabel, BorderLayout.EAST);
+
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        frame.add(headerPanel, BorderLayout.NORTH);
+        
+        return headerPanel;
+    }
+    
+    private float getCDPrice(String cdName) {
+        float cdPrice = 0;
+        List<String[]> cdData = readCDData();
+
+        for (String[] cd : cdData) {
+            String cdNameFromFile = cd[0];
+            if (cdName.equals(cdNameFromFile)) {
+                cdPrice = Float.parseFloat(cd[1]);
+                
+                break;
+            }
+        }
+
+        return cdPrice;
+    }
+    
+    private int getCDStock(String cdName) {
+        int stockQuantity = 0;
+        List<String[]> cdData = readCDData();
+
+        for (String[] cd : cdData) {
+            String cdNameFromFile = cd[0];
+            if (cdName.equals(cdNameFromFile)) {
+                try {
+                    stockQuantity = Integer.parseInt(cd[2]);
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid stock quantity format for CD: " + cdName);
+                    e.printStackTrace();
+                }
+                break;
+            }
+        }
+
+        return stockQuantity;
+    }
+
+    private JPanel createCatalogPanel(JFrame mainMenuFrame, String username) {
+        Runnable backButtonAction = () -> {
+            mainMenuFrame.getContentPane().removeAll(); // Clear current content
+            showMainMenu(mainMenuFrame, username); // Pass the username when returning to the main menu
+            mainMenuFrame.revalidate(); // Refresh frame
+            mainMenuFrame.repaint(); // Repaint frame
+        };
+        
+
+        JPanel catalogPanel = new JPanel(new BorderLayout());
+
+        JPanel headerPanel = headerPanel(mainMenuFrame, "Catalog", username, backButtonAction);
+
+        catalogPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
+
+        // Add CD table
+        String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
+        List<String[]> data = readCDData();
+        String[][] dataArray = data.toArray(new String[0][]);
+
+        // Format prices with RM currency
+        for (String[] row : dataArray) {
+            row[1] = "RM " + row[1];
+        }
+
+        JTable table = new JTable(dataArray, columnNames);
+        JScrollPane scrollPane = new JScrollPane(table);
+        catalogPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Set column sizes
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.setDefaultEditor(Object.class, null);
+        table.getColumnModel().getColumn(0).setPreferredWidth(300); // CD Name column size increased
+        table.getColumnModel().getColumn(1).setPreferredWidth(120); // Price column size adjusted
+        table.getColumnModel().getColumn(2).setPreferredWidth(80); // Stock column size
+        table.getColumnModel().getColumn(3).setPreferredWidth(100); // Genre column size
+        table.getColumnModel().getColumn(4).setPreferredWidth(200); // Distributor column size
+
+        // Add selection listener to the table
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) { // Ensure the event is not fired twice
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow != -1) { // Ensure a row is selected
+                        // Extract CD information from the selected row
+                        String cdName = (String) table.getValueAt(selectedRow, 0);
+                        String price = (String) table.getValueAt(selectedRow, 1);
+                        String stock = (String) table.getValueAt(selectedRow, 2);
+                        String genre = (String) table.getValueAt(selectedRow, 3);
+                        String distributor = (String) table.getValueAt(selectedRow, 4);
+
+                        // Create and display CD information window
+                        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "CD Information", true);
+                        cdInfoDialog.setSize(400, 300);
+                        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+
+                        // Use a GridLayout with 8 rows and 2 columns for the infoPanel
+                        JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
+                        infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+
+                        infoPanel.add(new JLabel("CD Name: "));
+                        infoPanel.add(new JLabel(cdName));
+                        infoPanel.add(new JLabel("Price: "));
+                        infoPanel.add(new JLabel(price));
+                        infoPanel.add(new JLabel("Stock: "));
+                        infoPanel.add(new JLabel(stock));
+                        infoPanel.add(new JLabel("Genre: "));
+                        infoPanel.add(new JLabel(genre));
+                        infoPanel.add(new JLabel("Distributor: "));
+                        infoPanel.add(new JLabel(distributor));
+
+                        // Fields for user input
+                        JTextField numCDsField = new JTextField();
+                        JTextField numDaysField = new JTextField();
+
+                        // Fields for user input
+                        infoPanel.add(new JLabel("Quantity: "));
+                        infoPanel.add(numCDsField);
+                        infoPanel.add(new JLabel("Days to rent: "));
+                        infoPanel.add(numDaysField);
+
+                        JButton addtoCartButton = new JButton("Add to Cart");
+                        infoPanel.add(new JLabel()); // Empty cell for alignment
+                        infoPanel.add(addtoCartButton);
+
+                        // Add action listener to the addtoCartButton
+                        addtoCartButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                try {
+                                    // Retrieve quantity and days rented
+                                    int quantity = Integer.parseInt(numCDsField.getText());
+                                    int daysRented = Integer.parseInt(numDaysField.getText());
+
+                                    // Check if either quantity or days rented is zero
+                                    if (quantity <= 0 || daysRented <= 0) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Quantity and days rented must be greater than 0.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return; // Exit the method
+                                    }
+
+                                    // Check if the requested quantity exceeds the available stock
+                                    int availableStock = Integer.parseInt(stock);
+                                    if (quantity > availableStock) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return; // Exit the method
+                                    }
+
+                                    // Create the directory for the user's cart if it doesn't exist
+                                    File cartDirectory = new File("records/cart/");
+                                    if (!cartDirectory.exists()) {
+                                        cartDirectory.mkdirs(); // Create the directory and its parents if they don't exist
+                                    }
+
+                                    // Create the file for the user's cart
+                                    File cartFile = new File(cartDirectory, username + ".txt");
+
+                                    // Write CD information to the cart file
+                                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(cartFile, true))) {
+                                        writer.write('"' + cdName + '"' + " " + quantity + " " + daysRented); // Write CD name, quantity, and days rented
+                                        writer.newLine(); // Add a new line for the next item
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "CD added to cart!");
+                                    } catch (IOException ex) {
+                                        ex.printStackTrace();
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Error adding CD to cart.", "Error", JOptionPane.ERROR_MESSAGE);
+                                    }
+                                } catch (NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(cdInfoDialog, "Please enter valid integer values.", "Error", JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        });
+
+                        cdInfoDialog.add(infoPanel);
+                        cdInfoDialog.setVisible(true);
+                    }
+                }
+            }
+        });
+
+        return catalogPanel;
+    }
+    
+    private JLabel cartTotalQuantityValueLabel;
+    private JLabel cartTotalPriceValueLabel;
+    
+    private JPanel createCartPanel(JFrame mainMenuFrame, String username) {
+        JPanel cartPanel = new JPanel(new BorderLayout());
+        
+        Runnable backButtonAction = () -> {
+            mainMenuFrame.getContentPane().removeAll(); // Clear current content
+            showMainMenu(mainMenuFrame, username); // Pass the username when returning to the main menu
+            mainMenuFrame.revalidate(); // Refresh frame
+            mainMenuFrame.repaint(); // Repaint frame
+        };
+
+        // Initialize instance variables
+        cartTotalQuantityValueLabel = new JLabel();
+        cartTotalPriceValueLabel = new JLabel();
+
+        JPanel headerPanel = headerPanel(mainMenuFrame, "Cart", username, backButtonAction);
+        cartPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
+
+        // Table to display CDs information
+        String[] columnNames = {"CD Name", "Quantity", "Days Rented", "Base Price", "Total Price"};
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+        JTable table = new JTable(model);
+        table.setDefaultEditor(Object.class, null);
+
+        // Add a selection listener to the table
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow != -1) { // If a row is selected
+                        openEditDialog(selectedRow, model, username); // Pass the selected row index
+                        table.clearSelection(); // Deselect the row after opening the edit dialog
+                    }
+                }
+            }
+        });
+
+        // Scroll pane for table
+        JScrollPane scrollPane = new JScrollPane(table);
+        
+
+        String ratePerDayFormatted = String.format("%.2f", ratePerDay);
+
+        // Create the disclaimer label with the formatted rate per day
+        JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Total fee is calculated based on the base price and additional charges. Additional charges are RM " + ratePerDayFormatted + "/day for each book rented.<br></html>");
+        // Panel to hold the table and disclaimer label
+        JPanel tableWithDisclaimerPanel = new JPanel(new BorderLayout());
+
+        // Add table to the tableWithDisclaimerPanel
+        tableWithDisclaimerPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Add disclaimer label to the bottom of the tableWithDisclaimerPanel
+        tableWithDisclaimerPanel.add(disclaimerLabel, BorderLayout.SOUTH);
+
+        // Add tableWithDisclaimerPanel to the cartPanel
+        cartPanel.add(tableWithDisclaimerPanel, BorderLayout.CENTER);
+
+        // Panel for summary information
+        JPanel summaryPanel = new JPanel(new GridLayout(4, 1));
+        JLabel summaryLabel = new JLabel("");
+
+        // Panel for total quantity
+        JPanel totalQuantityPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel totalQuantityTextLabel = new JLabel("Total Quantity:");
+        totalQuantityPanel.add(totalQuantityTextLabel);
+        totalQuantityPanel.add(cartTotalQuantityValueLabel);
+
+        // Panel for total price
+        JPanel totalPricePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel totalPriceTextLabel = new JLabel("Total Price:");
+        totalPricePanel.add(totalPriceTextLabel);
+        totalPricePanel.add(cartTotalPriceValueLabel);
+
+        JButton rentButton = new JButton("Rent");
+
+        // Retrieve CDs information from file and populate table
+        int totalQuantity = 0;
+        double totalPrice = 0.0;
+        try {
+            File cartFile = new File("records/cart/" + username + ".txt");
+            BufferedReader reader = new BufferedReader(new FileReader(cartFile));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Splitting the line into parts based on spaces, but keep the CD name within double quotations intact
+                String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+                if (parts.length == 3) {
+                    // Trim extra spaces and remove surrounding double quotations from CD name
+                    parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+
+                    // Convert quantity and days to integers
+                    int quantity = Integer.parseInt(parts[1]);
+                    int days = Integer.parseInt(parts[2]);
+
+                    // Calculate total cost
+                    double price = getCDPrice(parts[0]);
+                    double totalCost = ((price + (days * ratePerDay)) * quantity);
+
+                    // Add the calculated total cost and quantity to the parts array
+                    String[] updatedParts = new String[5];
+                    System.arraycopy(parts, 0, updatedParts, 0, 3);
+                    updatedParts[3] = String.format("RM %.2f", price);
+                    updatedParts[4] = String.format("RM %.2f", totalCost);
+
+                    // Update total quantity and price
+                    totalQuantity += quantity;
+                    totalPrice += totalCost;
+
+                    // Adding the updated parts to the table model
+                    model.addRow(updatedParts);
+                }
+            }
+            reader.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(cartPanel, "Error loading cart information.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        
+        // Set total quantity and price labels
+        cartTotalQuantityValueLabel.setText(String.valueOf(totalQuantity));
+        cartTotalPriceValueLabel.setText(String.format("RM %.2f", totalPrice));
+
+        // Add components to summary panel
+        summaryPanel.add(summaryLabel);
+        summaryPanel.add(totalQuantityPanel);
+        summaryPanel.add(totalPricePanel);
+        summaryPanel.add(rentButton);
+        
+        // Add summary panel to cart panel
+        cartPanel.add(summaryPanel, BorderLayout.SOUTH);
+
+        return cartPanel;
+    }
+
+    
+    // Method to open a dialog for editing quantity and days rented
+    private void openEditDialog(int row, DefaultTableModel model, String username) {
+        JPanel editPanel = new JPanel();
+        editPanel.setLayout(new GridLayout(5, 2));
+
+        JLabel nameLabel = new JLabel("CD Name:");
+        JLabel quantityLabel = new JLabel("Quantity:");
+        JLabel daysLabel = new JLabel("Days Rented:");
+
+        JTextField quantityField = new JTextField(5);
+        JTextField daysField = new JTextField(5);
+
+        // Get CD name from the table model using the row index
+        String cdName = (String) model.getValueAt(row, 0);
+
+        // Set initial values for quantity and days rented
+        if (row != -1) {
+            quantityField.setText((String) model.getValueAt(row, 1));
+            daysField.setText((String) model.getValueAt(row, 2));
+        }
+
+        editPanel.add(nameLabel);
+        editPanel.add(new JLabel(cdName));
+        editPanel.add(quantityLabel);
+        editPanel.add(quantityField);
+        editPanel.add(daysLabel);
+        editPanel.add(daysField);
+
+        // Add delete button
+        JButton deleteButton = new JButton("Remove");
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to remove this item from your cart?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+                if (confirmDelete == JOptionPane.YES_OPTION) {
+                    if (row != -1) {
+                        model.removeRow(row);
+                        // Rewrite the file without the deleted row
+                        try {
+                            File cartFile = new File("records/cart/" + username + ".txt");
+                            FileWriter writer = new FileWriter(cartFile);
+                            for (int i = 0; i < model.getRowCount(); i++) {
+                                String cd = (String) model.getValueAt(i, 0);
+                                String quantity = (String) model.getValueAt(i, 1);
+                                String days = (String) model.getValueAt(i, 2);
+                                writer.write("\"" + cd + "\" " + quantity + " " + days + "\n");
+                            }
+                            writer.close();
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(null, "Error updating cart information.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                        // Update the summary after deletion
+                        updateSummary(model);
+                        // Close the dialog after deleting
+                        JOptionPane.getRootFrame().dispose();
+                        JOptionPane.showMessageDialog(null, "Item successfully removed from cart!");
+                    }
+                }
+            }
+        });
+
+        // Add an empty placeholder for alignment
+        editPanel.add(new JLabel());
+        editPanel.add(deleteButton);
+
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(null, editPanel, "Edit Item",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    int quantity = Integer.parseInt(quantityField.getText());
+                    int days = Integer.parseInt(daysField.getText());
+
+                    if (quantity <= 0 || days <= 0) {
+                        JOptionPane.showMessageDialog(null, "Quantity and Days Rented must be greater than zero.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        int stockQuantity = getCDStock(cdName);
+
+                        if (quantity > stockQuantity) {
+                            JOptionPane.showMessageDialog(null, "Not enough stock available! " + stockQuantity + " left!");
+                            continue; // Restart the loop to allow the user to enter valid input
+                        }
+
+                        JOptionPane.showMessageDialog(null, "Item updated!");
+                        // Update the table model with the edited information
+                        if (row != -1) {
+                            model.setValueAt(quantityField.getText(), row, 1);
+                            model.setValueAt(daysField.getText(), row, 2);
+                            // Recalculate the price and total price
+                            double price = getCDPrice(cdName);
+                            double totalCost = ((price + (ratePerDay * days)) * quantity);
+                            model.setValueAt(String.format("RM %.2f", price), row, 3);
+                            model.setValueAt(String.format("RM %.2f", totalCost), row, 4);
+                            // Rewrite the file with the updated information
+                            try {
+                                File cartFile = new File("records/cart/" + username + ".txt");
+                                FileWriter writer = new FileWriter(cartFile);
+                                for (int i = 0; i < model.getRowCount(); i++) {
+                                    String cd = (String) model.getValueAt(i, 0);
+                                    String updatedQuantity = (String) model.getValueAt(i, 1);
+                                    String updatedDays = (String) model.getValueAt(i, 2);
+                                    writer.write("\"" + cd + "\" " + updatedQuantity + " " + updatedDays + "\n");
+                                }
+                                writer.close();
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                                JOptionPane.showMessageDialog(null, "Error updating cart information.", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                            // Update the summary after editing
+                            updateSummary(model);
+                            break; // Exit the loop after successful update
+                        }
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Please enter valid numeric values for Quantity and Days Rented.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                // User clicked cancel or closed the dialog
+                break; // Exit the loop
+            }
+        }
+    }
+
+    private void updateSummary(DefaultTableModel model) {
+        int totalQuantity = 0;
+        double totalPrice = 0.0;
+
+        for (int i = 0; i < model.getRowCount(); i++) {
+            int quantity = Integer.parseInt((String) model.getValueAt(i, 1));
+            int days = Integer.parseInt((String) model.getValueAt(i, 2));
+            double price = Double.parseDouble(((String) model.getValueAt(i, 3)).substring(3)); // Extract price from formatted string
+
+            // Calculate total cost including daily rental rate
+            double totalCost = ((price + (ratePerDay * days)) * quantity);
+
+            totalQuantity += quantity;
+            totalPrice += totalCost;
+        }
+
+        // Update the summary labels
+        cartTotalQuantityValueLabel.setText(String.valueOf(totalQuantity));
+        cartTotalPriceValueLabel.setText(String.format("RM %.2f", totalPrice));
+    }
+
+    // Helper method to find the row index by CD name
+    private int findRowByCDName(String cdName, DefaultTableModel model) {
+        for (int i = 0; i < model.getRowCount(); i++) {
+            if (model.getValueAt(i, 0).equals(cdName)) {
+                return i;
+            }
+        }
+        return -1; // Not found
+    }
+
+    private List<String[]> readCDData() {
+        List<String[]> data = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) { // Corrected file name
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = parseLine(line);
+                if (parts.length == 5) {
+                    data.add(parts);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+
+    private String[] parseLine(String line) {
+        List<String> parts = new ArrayList<>();
+        Matcher matcher = Pattern.compile("\"([^\"]*)\"|(\\S+)").matcher(line);
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                parts.add(matcher.group(1));
+            } else {
+                parts.add(matcher.group(2));
+            }
+        }
+        return parts.toArray(new String[0]);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new CD_Rental_System().setVisible(true);
+            }
+        });
+    }
+}
