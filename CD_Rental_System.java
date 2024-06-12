@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.*;
@@ -273,7 +274,11 @@ public class CD_Rental_System extends JFrame {
         rentedButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Implement functionality for rented button
+                JPanel rentedPanel = createRentedPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
+                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
+                mainMenuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
+                mainMenuFrame.revalidate(); // Refresh frame
+                mainMenuFrame.repaint(); // Repaint frame
             }
         });
 
@@ -925,6 +930,173 @@ private void updateInventory(List<String> rentedCDs) {
         e.printStackTrace();
     }
 }
+
+private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
+    JPanel rentedPanel = new JPanel(new BorderLayout());
+
+    Runnable backButtonAction = () -> {
+        mainMenuFrame.getContentPane().removeAll(); // Clear current content
+        showMainMenu(mainMenuFrame, username); // Pass the username when returning to the main menu
+        mainMenuFrame.revalidate(); // Refresh frame
+        mainMenuFrame.repaint(); // Repaint frame
+    };
+
+    JPanel headerPanel = headerPanel(mainMenuFrame, "Rented CDs", username, backButtonAction);
+    rentedPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
+
+    // Table to display rented CDs information
+    String[] columnNames = {"CD Name", "Quantity", "Due Date"};
+    DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+    JTable table = new JTable(model);
+    table.setDefaultEditor(Object.class, null);
+
+    // Add a selection listener to the table
+    table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        @Override
+        public void valueChanged(ListSelectionEvent e) {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow != -1) { // If a row is selected
+                    openReturnDialog(selectedRow, model, username); // Pass the selected row index
+                    table.clearSelection(); // Deselect the row after opening the return dialog
+                }
+            }
+        }
+    });
+
+    // Scroll pane for table
+    JScrollPane scrollPane = new JScrollPane(table);
+
+    // Panel to hold the table
+    JPanel tablePanel = new JPanel(new BorderLayout());
+    tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+    // Retrieve rented CDs information from file and populate table
+    try {
+        File rentedFile = new File("records/rented/" + username + ".txt");
+        BufferedReader reader = new BufferedReader(new FileReader(rentedFile));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            // Splitting the line to get the CD name, quantity, and due date
+            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+            parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+            String cdName = parts[0];
+            int quantity = Integer.parseInt(parts[1]);
+            LocalDate dueDate = LocalDate.parse(parts[2]);
+
+            // Add the rented CD information to the table model
+            model.addRow(new Object[]{cdName, quantity, dueDate});
+        }
+        reader.close();
+    } catch (IOException | DateTimeParseException | ArrayIndexOutOfBoundsException ex) {
+    }
+
+    // Add tablePanel to the rentedPanel
+    rentedPanel.add(tablePanel, BorderLayout.CENTER);
+
+    JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Select the CDs to return the specific CD(s).<br> Late returns are fined RM 0.50/day for each CD rented.<br><br></html>");
+
+        JPanel tableWithDisclaimerPanel = new JPanel(new BorderLayout());
+
+        tableWithDisclaimerPanel.add(scrollPane, BorderLayout.CENTER);
+
+        tableWithDisclaimerPanel.add(disclaimerLabel, BorderLayout.SOUTH);
+
+        rentedPanel.add(tableWithDisclaimerPanel, BorderLayout.CENTER);
+
+    return rentedPanel;
+}
+
+private void openReturnDialog(int selectedRow, DefaultTableModel model, String username) {
+    String cdName = (String) model.getValueAt(selectedRow, 0);
+    int quantity = (int) model.getValueAt(selectedRow, 1);
+
+    int confirm = JOptionPane.showConfirmDialog(null, "Do you want to return " + quantity + " copies of " + cdName + "?", "Confirm Return", JOptionPane.YES_NO_OPTION);
+    if (confirm == JOptionPane.YES_OPTION) {
+        model.removeRow(selectedRow);
+        updateInventoryAfterReturn(cdName, quantity);
+        removeRentedRecord(username, cdName, quantity);
+    }
+}
+
+private void updateInventoryAfterReturn(String cdName, int quantity) {
+    File cdsFile = new File("records/CDs.txt");
+    List<String> updatedLines = new ArrayList<>();
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(cdsFile))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+            parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+            String inventoryCDName = parts[0];
+            double price = Double.parseDouble(parts[1]);
+            int stock = Integer.parseInt(parts[2]);
+            String genre = parts[3];
+            String author = parts[4];
+
+            if (inventoryCDName.equals(cdName)) {
+                stock += quantity; // Add the returned quantity back to stock
+            }
+
+            String updatedLine = "\"" + inventoryCDName + "\" " + String.format("%.2f", price) + " " + stock + " " + genre + " \"" + author + "\"";
+            updatedLines.add(updatedLine);
+        }
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    }
+
+    // Rewrite the CDs file with updated stock
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(cdsFile))) {
+        for (String updatedLine : updatedLines) {
+            writer.write(updatedLine);
+            writer.newLine();
+        }
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    }
+}
+
+private void removeRentedRecord(String username, String cdName, int quantity) {
+    File rentedFile = new File("records/rented/" + username + ".txt");
+    List<String> remainingCDs = new ArrayList<>();
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(rentedFile))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+            parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+            String rentedCDName = parts[0];
+            int rentedQuantity = Integer.parseInt(parts[1]);
+            LocalDate dueDate = LocalDate.parse(parts[2]);
+
+            if (!rentedCDName.equals(cdName) || rentedQuantity != quantity) {
+                remainingCDs.add(line);
+            } else if (rentedQuantity == quantity) {
+                // if the rented quantity matches the quantity to be removed, skip this line (it gets removed)
+                quantity -= rentedQuantity;
+            } else {
+                // if the rented quantity is larger, decrease the quantity and keep the line with updated quantity
+                rentedQuantity -= quantity;
+                String updatedLine = "\"" + rentedCDName + "\" " + rentedQuantity + " " + dueDate;
+                remainingCDs.add(updatedLine);
+            }
+        }
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    }
+
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(rentedFile))) {
+        for (String cd : remainingCDs) {
+            writer.write(cd);
+            writer.newLine();
+        }
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    }
+}
+
+
+
 
 
     // Helper method to find the row index by CD name
