@@ -829,12 +829,17 @@ public class CD_Rental_System extends JFrame {
         while ((line = reader.readLine()) != null) {
             // Splitting the line to get the CD name, quantity, and days rented
             String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+            parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
             String cdName = parts[0];
             int quantity = Integer.parseInt(parts[1]);
             int daysRented = Integer.parseInt(parts[2]);
 
             // Calculate due date by adding days rented to the current date
             LocalDate dueDate = LocalDate.now().plusDays(daysRented);
+
+            if (cdName.contains(" ")) {
+                cdName = "\"" + cdName + "\"";
+            }
 
             // Construct the line to be written to rented file (CD name, quantity, due date)
             String rentedLine = cdName + " " + quantity + " " + dueDate;
@@ -863,6 +868,8 @@ public class CD_Rental_System extends JFrame {
         return;
     }
 
+    updateInventory(rentedCDs);
+
     // Clear the cart file
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(userCartFile))) {
         writer.write("");
@@ -871,12 +878,54 @@ public class CD_Rental_System extends JFrame {
     }
 
     JOptionPane.showMessageDialog(this, "CDs rented successfully!");
+}    
+
+private void updateInventory(List<String> rentedCDs) {
+    File cdsFile = new File("records/CDs.txt");
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(cdsFile))) {
+        List<String> updatedLines = new ArrayList<>();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+            parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+            String cdName = parts[0];
+            double price = Double.parseDouble(parts[1]);
+            int stock = Integer.parseInt(parts[2]);
+            String genre = parts[3];
+            String distributor = parts[4];
+
+            // Check if the CD is rented and update its stock
+            for (String rentedCD : rentedCDs) {
+                String[] rentedParts = rentedCD.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+                rentedParts[0] = rentedParts[0].trim().replaceAll("^\"|\"$", "");
+                String rentedCDName = rentedParts[0];
+                int quantityRented = Integer.parseInt(rentedParts[1]);
+
+                if (cdName.equals(rentedCDName)) {
+                    stock -= quantityRented; // Deduct the rented quantity from stock
+                }
+            }
+            
+            // Construct the updated line
+            String updatedLine = "\"" + cdName + "\" " + price + " " + stock + " \"" + genre + "\" \"" + distributor + "\"";
+
+            // Add the updated line to the list
+            updatedLines.add(updatedLine);
+        }
+
+        // Rewrite the contents of the CDs file with updated stock
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(cdsFile))) {
+            for (String updatedLine : updatedLines) {
+                writer.write(updatedLine);
+                writer.newLine();
+            }
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
 }
 
-    
-
-    
-    
 
     // Helper method to find the row index by CD name
     private int findRowByCDName(String cdName, DefaultTableModel model) {
