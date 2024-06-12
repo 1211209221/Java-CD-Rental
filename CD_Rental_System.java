@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.*;
@@ -595,6 +596,18 @@ public class CD_Rental_System extends JFrame {
         totalPricePanel.add(cartTotalPriceValueLabel);
 
         JButton rentButton = new JButton("Rent");
+        rentButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                rentCDs(username);
+                // Refresh the cart panel after renting
+                mainMenuFrame.getContentPane().removeAll();
+                mainMenuFrame.getContentPane().add(createCartPanel(mainMenuFrame, username));
+                mainMenuFrame.revalidate();
+                mainMenuFrame.repaint();
+            }
+        });
+
 
         // Retrieve CDs information from file and populate table
         int totalQuantity = 0;
@@ -798,6 +811,72 @@ public class CD_Rental_System extends JFrame {
         cartTotalQuantityValueLabel.setText(String.valueOf(totalQuantity));
         cartTotalPriceValueLabel.setText(String.format("RM %.2f", totalPrice));
     }
+
+    private void rentCDs(String username) {
+    File cartDir = new File("records/cart");
+    File rentedDir = new File("records/rented");
+    if (!rentedDir.exists()) {
+        rentedDir.mkdir();
+    }
+
+    File userCartFile = new File(cartDir, username + ".txt");
+    File userRentedFile = new File(rentedDir, username + ".txt");
+    List<String> rentedCDs = new ArrayList<>();
+
+    // Read CDs from user's cart
+    try (BufferedReader reader = new BufferedReader(new FileReader(userCartFile))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            // Splitting the line to get the CD name, quantity, and days rented
+            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+            String cdName = parts[0];
+            int quantity = Integer.parseInt(parts[1]);
+            int daysRented = Integer.parseInt(parts[2]);
+
+            // Calculate due date by adding days rented to the current date
+            LocalDate dueDate = LocalDate.now().plusDays(daysRented);
+
+            // Construct the line to be written to rented file (CD name, quantity, due date)
+            String rentedLine = cdName + " " + quantity + " " + dueDate;
+
+            // Add the constructed line to the list of rented CDs
+            rentedCDs.add(rentedLine);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+        return;
+    }
+
+    if (rentedCDs.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Cart is empty!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    // Write rented CDs to user's rented file
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(userRentedFile, true))) {
+        for (String rentedCD : rentedCDs) {
+            writer.write(rentedCD);
+            writer.newLine();
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+        return;
+    }
+
+    // Clear the cart file
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(userCartFile))) {
+        writer.write("");
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+
+    JOptionPane.showMessageDialog(this, "CDs rented successfully!");
+}
+
+    
+
+    
+    
 
     // Helper method to find the row index by CD name
     private int findRowByCDName(String cdName, DefaultTableModel model) {
