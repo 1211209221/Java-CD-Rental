@@ -908,7 +908,7 @@ private void updateInventory(List<String> rentedCDs) {
             }
             
             // Construct the updated line
-            String updatedLine = "\"" + cdName + "\" " + price + " " + stock + " \"" + genre + "\" \"" + distributor + "\"";
+            String updatedLine = "\"" + cdName + "\" " + String.format("%.2f", price) + " " + stock + " " + genre + " \"" + distributor + "\"";
 
             // Add the updated line to the list
             updatedLines.add(updatedLine);
