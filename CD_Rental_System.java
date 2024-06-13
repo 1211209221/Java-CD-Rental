@@ -4,12 +4,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 public class CD_Rental_System extends JFrame {
@@ -945,10 +947,35 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
     rentedPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
 
     // Table to display rented CDs information
-    String[] columnNames = {"CD Name", "Quantity", "Due Date"};
+    String[] columnNames = {"CD Name", "Quantity", "Due Date", "Status"};
     DefaultTableModel model = new DefaultTableModel(columnNames, 0);
     JTable table = new JTable(model);
     table.setDefaultEditor(Object.class, null);
+
+    // Custom renderer for center alignment and coloring the status
+    DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (column == 3) { // Status column
+                String status = (String) value;
+                if ("Overdue".equals(status)) {
+                    c.setForeground(Color.RED);
+                } else {
+                    c.setForeground(Color.GREEN);
+                }
+            } else {
+                c.setForeground(Color.BLACK); // Default color for other columns
+            }
+            ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER); // Center align
+            return c;
+        }
+    };
+
+    // Apply the custom renderer to all columns
+    for (int i = 0; i < table.getColumnCount(); i++) {
+        table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+    }
 
     // Add a selection listener to the table
     table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -984,25 +1011,32 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
             int quantity = Integer.parseInt(parts[1]);
             LocalDate dueDate = LocalDate.parse(parts[2]);
 
+            String status;
+            // Determine the status based on the due date and current date
+            LocalDate currentDate = LocalDate.now();
+            if (currentDate.isAfter(dueDate)) {
+                status = "Overdue";
+            } else {
+                status = "Active";
+            }
+
             // Add the rented CD information to the table model
-            model.addRow(new Object[]{cdName, quantity, dueDate});
+            model.addRow(new Object[]{cdName, quantity, dueDate, status});
         }
         reader.close();
     } catch (IOException | DateTimeParseException | ArrayIndexOutOfBoundsException ex) {
+        ex.printStackTrace();
     }
 
     // Add tablePanel to the rentedPanel
     rentedPanel.add(tablePanel, BorderLayout.CENTER);
 
     JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Select the CDs to return the specific CD(s).<br> Late returns are fined RM 0.50/day for each CD rented.<br><br></html>");
+    JPanel tableWithDisclaimerPanel = new JPanel(new BorderLayout());
+    tableWithDisclaimerPanel.add(scrollPane, BorderLayout.CENTER);
+    tableWithDisclaimerPanel.add(disclaimerLabel, BorderLayout.SOUTH);
 
-        JPanel tableWithDisclaimerPanel = new JPanel(new BorderLayout());
-
-        tableWithDisclaimerPanel.add(scrollPane, BorderLayout.CENTER);
-
-        tableWithDisclaimerPanel.add(disclaimerLabel, BorderLayout.SOUTH);
-
-        rentedPanel.add(tableWithDisclaimerPanel, BorderLayout.CENTER);
+    rentedPanel.add(tableWithDisclaimerPanel, BorderLayout.CENTER);
 
     return rentedPanel;
 }
@@ -1010,8 +1044,21 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
 private void openReturnDialog(int selectedRow, DefaultTableModel model, String username) {
     String cdName = (String) model.getValueAt(selectedRow, 0);
     int quantity = (int) model.getValueAt(selectedRow, 1);
+    LocalDate dueDate = (LocalDate) model.getValueAt(selectedRow, 2);
+    String status = (String) model.getValueAt(selectedRow, 3);
 
-    int confirm = JOptionPane.showConfirmDialog(null, "Do you want to return " + quantity + " copies of " + cdName + "?", "Confirm Return", JOptionPane.YES_NO_OPTION);
+    LocalDate currentDate = LocalDate.now();
+    int overdueDays = Period.between(dueDate, currentDate).getDays();
+    double penaltyFee = 0.5 * overdueDays;
+
+    String message;
+    if ("Overdue".equals(status)) {
+        message = String.format("Overdue by %d day(s). Total penalty fee is RM %.2f. Pay penalty fee and return %d copy/copies of '%s'?", overdueDays, penaltyFee, quantity, cdName);
+    } else {
+        message = String.format("Do you want to return %d copies of '%s'?", quantity, cdName);
+    }
+
+    int confirm = JOptionPane.showConfirmDialog(null, message, "Confirm Return", JOptionPane.YES_NO_OPTION);
     if (confirm == JOptionPane.YES_OPTION) {
         model.removeRow(selectedRow);
         updateInventoryAfterReturn(cdName, quantity);
