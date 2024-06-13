@@ -1,4 +1,4 @@
-"The Monthy Python and the Holy Grail" 3.30 5 Comedy "EMI Films"
+"The Monthy Python and the Holy Grail" 3.30 4 Comedy "EMI Films"
 "The Godfather" 4.99 10 Crime "Paramount Pictures"
 "Star Wars" 5.99 15 Sci-Fi "Lucasfilm"
 "The Dark Knight" 3.99 8 Action "Warner Bros."

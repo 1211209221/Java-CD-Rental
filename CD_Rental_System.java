@@ -855,6 +855,7 @@ public class CD_Rental_System extends JFrame {
             rentedCDs.add(rentedLine);
         }
     } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "An error occurred while reading the cart file.", "Error", JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
         return;
     }
@@ -871,6 +872,7 @@ public class CD_Rental_System extends JFrame {
             writer.newLine();
         }
     } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "An error occurred while storing the rented CDs into file.", "Error", JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
         return;
     }
@@ -881,6 +883,7 @@ public class CD_Rental_System extends JFrame {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(userCartFile))) {
         writer.write("");
     } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "An error occurred while clearing the cart.", "Error", JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
     }
 
@@ -927,8 +930,12 @@ private void updateInventory(List<String> rentedCDs) {
                 writer.write(updatedLine);
                 writer.newLine();
             }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error writing to the CDs file.", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "Error reading the CDs file.", "Error", JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
     }
 }
@@ -1024,7 +1031,14 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
             model.addRow(new Object[]{cdName, quantity, dueDate, status});
         }
         reader.close();
-    } catch (IOException | DateTimeParseException | ArrayIndexOutOfBoundsException ex) {
+    } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "Error reading the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
+        ex.printStackTrace();
+    } catch (DateTimeParseException ex) {
+        JOptionPane.showMessageDialog(this, "Error parsing the due date in the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
+        ex.printStackTrace();
+    } catch (ArrayIndexOutOfBoundsException ex) {
+        JOptionPane.showMessageDialog(this, "Error processing the rented CDs file format for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
     }
 
@@ -1089,6 +1103,7 @@ private void updateInventoryAfterReturn(String cdName, int quantity) {
             updatedLines.add(updatedLine);
         }
     } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "Error reading the CDs file.", "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
     }
 
@@ -1099,6 +1114,7 @@ private void updateInventoryAfterReturn(String cdName, int quantity) {
             writer.newLine();
         }
     } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "Error reading the CDs file.", "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
     }
 }
@@ -1129,6 +1145,7 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
             }
         }
     } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "Error reading the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
     }
 
@@ -1138,13 +1155,10 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
             writer.newLine();
         }
     } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "Error reading the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
     }
 }
-
-
-
-
 
     // Helper method to find the row index by CD name
     private int findRowByCDName(String cdName, DefaultTableModel model) {
