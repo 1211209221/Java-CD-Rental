@@ -27,7 +27,7 @@ public class CD_Rental_System extends JFrame {
 
         // Create the main menu panel with padding
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(4, 1, 10, 10));
+        panel.setLayout(new GridLayout(5, 1, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Add padding
         
         JPanel HomePanel = showHome(panel); // Pass mainMenuFrame instance
@@ -41,10 +41,12 @@ public class CD_Rental_System extends JFrame {
 
         JButton registerButton = new JButton("Register");
         JButton loginButton = new JButton("Login");
+        JButton adminLoginButton = new JButton("Admin Login");
         JButton exitButton = new JButton("Exit");
 
         panel.add(registerButton);
         panel.add(loginButton);
+        panel.add(adminLoginButton);
         panel.add(exitButton);
 
         add(panel);
