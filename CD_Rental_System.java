@@ -130,7 +130,7 @@ public class CD_Rental_System extends JFrame {
                                 writer.newLine();
                                 System.out.println("User registered: " + username + " " + password);  // Debug print
                                 System.out.println("Data saved in: " + userFile.getAbsolutePath());  // Debug print for file path
-                                JOptionPane.showMessageDialog(registerDialog, "User registered! Redirecting to main menu...");
+                                JOptionPane.showMessageDialog(registerDialog, "User registered!");
                                 registerDialog.dispose();
                             } catch (IOException ioException) {
                                 ioException.printStackTrace();
