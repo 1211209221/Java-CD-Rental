@@ -1,18 +1,17 @@
 //subclass of class user
-//for login purpose
+//for register and login purpose
 //will separate later
 //so it is readable and understandable
 
-
-public class Admin extends User{
+public class Customer extends User{
+    
     public void setData(String username, String password){
         // Use superclass method to set the data
         setUserData(username, password);
     }
 
     public boolean passFilename(){
-        // Pass admin file to superclass to compare and return true or false
-        return compare("records/admin.txt");
+        // Pass customer file to superclass to compare and return true or false
+        return compare("records/users.txt");
     }
-
 }
