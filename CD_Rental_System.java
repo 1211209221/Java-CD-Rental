@@ -1037,8 +1037,7 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
         }
         reader.close();
     } catch (IOException ex) {
-        JOptionPane.showMessageDialog(this, "Error reading the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
-        ex.printStackTrace();
+      
     } catch (DateTimeParseException ex) {
         JOptionPane.showMessageDialog(this, "Error parsing the due date in the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
