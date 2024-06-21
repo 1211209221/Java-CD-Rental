@@ -1,3 +1,5 @@
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -33,20 +35,27 @@ public class CD_Rental_System extends JFrame {
         JPanel HomePanel = showHome(panel); // Pass mainMenuFrame instance
         
     }
-
+    
     private JPanel showHome(JPanel panel) { // Corrected the parameter type to JPanel
-        JLabel welcomeLabel = new JLabel("Retro CD Rental System", SwingConstants.CENTER);
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        panel.add(welcomeLabel);
+
+        BufferedImage logo = null;
+        try {
+            logo = ImageIO.read(new File("image/Retro.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        JLabel welcomeLabel1 = new JLabel(new ImageIcon(logo), SwingConstants.CENTER);
+        panel.add(welcomeLabel1);
+        JLabel welcomeLabel2 = new JLabel("Retro CD Rental System", SwingConstants.CENTER);
+        panel.add(welcomeLabel2);
 
         JButton registerButton = new JButton("Register");
         JButton loginButton = new JButton("Login");
-        JButton adminLoginButton = new JButton("Admin Login");
         JButton exitButton = new JButton("Exit");
 
         panel.add(registerButton);
         panel.add(loginButton);
-        panel.add(adminLoginButton);
         panel.add(exitButton);
 
         add(panel);
@@ -106,9 +115,13 @@ public class CD_Rental_System extends JFrame {
                 String password = new String(passwordField.getPassword());
 
                 if (!username.isEmpty() && !password.isEmpty()) {
-                    if (isUsernameTaken(username)) {
+                    //create cust obj to check password and whether name has been taken or not
+                    Customer cust = new Customer();
+                    cust.setData(username, password);
+
+                    if (!cust.isUsernameTaken(username)) {
                         JOptionPane.showMessageDialog(registerDialog, "Username is already taken. Please choose another one.", "Error", JOptionPane.ERROR_MESSAGE);
-                    } else if (!isValidPassword(password)) {
+                    } else if (!cust.isValidPassword(password)) {
                         JOptionPane.showMessageDialog(registerDialog, "Password must be at least 8 characters long and include at least one number, one special character, and one capital letter.", "Error", JOptionPane.ERROR_MESSAGE);
                     } else {
                         try {
@@ -118,8 +131,8 @@ public class CD_Rental_System extends JFrame {
                                 recordsDir.mkdir();
                             }
 
-                            // Create the users.txt file inside records folder
-                            File userFile = new File(recordsDir, "users.txt");
+                            // Create the customers.txt file inside records folder
+                            File userFile = new File(recordsDir, "customers.txt");
                             if (!userFile.exists()) {
                                 userFile.createNewFile();
                             }
@@ -149,28 +162,7 @@ public class CD_Rental_System extends JFrame {
 
         registerDialog.setVisible(true);
     }
-
-    private boolean isUsernameTaken(String username) {
-        try (BufferedReader reader = new BufferedReader(new FileReader("records/users.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                if (parts[0].equals(username)) {
-                    return true;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private boolean isValidPassword(String password) {
-        // Password must be at least 8 characters long and include at least one number, one special character, and one capital letter.
-        String pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+=!]).{8,}$";
-        return Pattern.matches(pattern, password);
-    }
-
+    
     private String showLoginDialog(JFrame mainMenuFrame) {
         JDialog loginDialog = new JDialog(this, "Login", true);
         loginDialog.setSize(300, 200);
@@ -201,14 +193,35 @@ public class CD_Rental_System extends JFrame {
                 String username = usernameField.getText();
                 String password = new String(passwordField.getPassword());
 
-                if (authenticateUser(username, password)) {
+                //create an obj cust
+                Customer c1 = new Customer();
+                c1.setData(username, password);
+                c1.passFilename();//to authenticate
+
+                boolean isuser = c1.passFilename();
+                boolean isadmin = false;
+
+                if (!isuser) {
+                    //create admin obj
+                    Admin a1 = new Admin();
+                    a1.setData(username, password);
+                    isadmin = a1.passFilename();
+                }
+
+                if (isuser) {
                     JOptionPane.showMessageDialog(loginDialog, "Login successful! Redirecting to main menu...");
                     loginDialog.dispose();
                     mainMenuFrame.setSize(900, 400);
                     mainMenuFrame.setLocationRelativeTo(null);
                     showMainMenu(mainMenuFrame, username);
                     setVisible(false);
-                } else {
+                } 
+                else if(isadmin){
+                    JOptionPane.showMessageDialog(loginDialog, "Login successful! Redirecting to admin panel...");
+                    loginDialog.dispose();
+                    //go to admin panel
+                }
+                else {
                     JOptionPane.showMessageDialog(loginDialog, "Invalid username or password.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -216,22 +229,6 @@ public class CD_Rental_System extends JFrame {
 
         loginDialog.setVisible(true);
         return usernameField.getText(); // Return the username
-    }
-
-
-    private boolean authenticateUser(String username, String password) {
-        try (BufferedReader reader = new BufferedReader(new FileReader("records/users.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                if (parts.length == 2 && parts[0].equals(username) && parts[1].equals(password)) {
-                    return true;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     private void showMainMenu(JFrame mainMenuFrame, String username) {

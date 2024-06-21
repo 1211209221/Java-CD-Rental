@@ -12,7 +12,7 @@ public class Admin extends User{
 
     public boolean passFilename(){
         // Pass admin file to superclass to compare and return true or false
-        return compare("records/admin.txt");
+        return authenticate("records/admin.txt");
     }
 
 }

@@ -21,17 +21,13 @@ public class User {
         return password;
     }
 
-    public boolean compare(String filename){
+    public boolean authenticate(String filename){
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = br.readLine()) != null) {
-                String[] credentials = line.split(",");
-                if (credentials.length == 2) {
-                    String fileUsername = credentials[0].trim();
-                    String filePassword = credentials[1].trim();
-                    if (fileUsername.equals(this.username) && filePassword.equals(this.password)) {
-                        return true;
-                    }
+                String[] parts = line.split(" ");
+                if (parts.length == 2 && parts[0].equals(username) && parts[1].equals(password)) {
+                    return true;
                 }
             }
         } catch (IOException e) {
