@@ -61,7 +61,7 @@ public class AdminPanel extends JFrame{
         mainp.add(buttonPanel, BorderLayout.SOUTH);
 
         // Catalog Panel (Center)
-        JPanel catalogPanel = catalogPanel();
+        JPanel catalogPanel = catalogPanel(mainMenuFrame);
         mainp.add(catalogPanel, BorderLayout.CENTER);
 
         // Add mainPanel to JFrame
@@ -72,8 +72,22 @@ public class AdminPanel extends JFrame{
     }
 
     //cd data
-    private JPanel catalogPanel(){
+    private JPanel catalogPanel(JFrame mainMenuFrame){
         JPanel catalogPanel = new JPanel(new BorderLayout());
+
+        JPanel searchButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        ImageIcon searchIcon = new ImageIcon("image/search.png");
+        JButton searchButton = new JButton(searchIcon);
+        searchButton.setPreferredSize(new Dimension(24, 24));
+        searchButton.setToolTipText("Search");
+        searchButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        searchButton.setBackground(Color.WHITE); 
+
+        searchButton.addActionListener(e -> {
+            // Implement search functionality here
+            System.out.println("Search button clicked");
+        });
+        searchButtonPanel.add(searchButton);
 
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
         List<String[]> data = readCDData();
@@ -94,7 +108,59 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(4).setPreferredWidth(240);
 
         JScrollPane scrollPane = new JScrollPane(table);
+        catalogPanel.add(searchButtonPanel, BorderLayout.NORTH);
         catalogPanel.add(scrollPane, BorderLayout.CENTER);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) { // Ensure the event is not fired twice
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow != -1) { // Ensure a row is selected
+                        // Extract CD information from the selected row
+                        String cdName = (String) table.getValueAt(selectedRow, 0);
+                        String price = (String) table.getValueAt(selectedRow, 1);
+                        String stock = (String) table.getValueAt(selectedRow, 2);
+                        String genre = (String) table.getValueAt(selectedRow, 3);
+                        String distributor = (String) table.getValueAt(selectedRow, 4);
+
+                        // Create and display CD information window
+                        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "CD Information", true);
+                        cdInfoDialog.setSize(400, 300);
+                        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+
+                        // Use a GridLayout with 8 rows and 2 columns for the infoPanel
+                        JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
+                        infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+
+                        infoPanel.add(new JLabel("CD Name: "));
+                        infoPanel.add(new JLabel(cdName));
+                        infoPanel.add(new JLabel("Price: "));
+                        infoPanel.add(new JLabel(price));
+                        infoPanel.add(new JLabel("Stock: "));
+                        infoPanel.add(new JLabel(stock));
+                        infoPanel.add(new JLabel("Genre: "));
+                        infoPanel.add(new JLabel(genre));
+                        infoPanel.add(new JLabel("Distributor: "));
+                        infoPanel.add(new JLabel(distributor));
+
+                        JButton deleteButton = new JButton("Remove");
+                        deleteButton.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to remove this CD?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+                                if (confirmDelete == JOptionPane.YES_OPTION) {
+                                    
+                                    }
+                                }
+                            });
+
+
+                        cdInfoDialog.add(infoPanel, BorderLayout.CENTER);
+                        cdInfoDialog.add(deleteButton, BorderLayout.SOUTH);
+                        cdInfoDialog.setVisible(true);
+                    }
+                }
+            }
+        });
 
         return catalogPanel;
     }
