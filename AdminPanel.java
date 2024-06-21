@@ -20,12 +20,12 @@ public class AdminPanel extends JFrame{
     public AdminPanel(JFrame mainMenuFrame, String username){
         this.username = username;
 
-        setTitle("Admin Panel");
+        setTitle("Retro CD Rental System");
         setSize(900, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel catalogPanel = new JPanel(new BorderLayout());
+        JPanel mainp = new JPanel(new BorderLayout());
         
         Runnable backButtonAction = () -> {
             int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
@@ -35,14 +35,46 @@ public class AdminPanel extends JFrame{
                 newSystem.setVisible(true); // Make the new frame visible
             }
         };
-
+        
         JPanel headerPanel = showHeader(mainMenuFrame, "Admin Panel", username, backButtonAction);
-        catalogPanel.add(headerPanel, BorderLayout.NORTH);
+        mainp.add(headerPanel, BorderLayout.NORTH);
 
-        add(catalogPanel);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.setBackground(Color.LIGHT_GRAY);
+
+        JButton addButton = new JButton("Add New CD");
+        addButton.addActionListener(e -> {
+            // Handle add button action
+            System.out.println("Add button clicked");
+        });
+        buttonPanel.add(addButton);
+
+        // View Rental Record Button
+        JButton viewButton = new JButton("View Rental Record");
+        viewButton.addActionListener(e -> {
+            // Handle view rental record button action
+            System.out.println("View rental record button clicked");
+        });
+        buttonPanel.add(viewButton);
+
+
+        mainp.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Catalog Panel (Center)
+        JPanel catalogPanel = catalogPanel();
+        mainp.add(catalogPanel, BorderLayout.CENTER);
+
+        // Add mainPanel to JFrame
+        add(mainp);
+
         setVisible(true);
 
-        // Add CD table
+    }
+
+    //cd data
+    private JPanel catalogPanel(){
+        JPanel catalogPanel = new JPanel(new BorderLayout());
+
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
         List<String[]> data = readCDData();
         String[][] dataArray = data.toArray(new String[0][]);
@@ -53,20 +85,19 @@ public class AdminPanel extends JFrame{
         }
 
         JTable table = new JTable(dataArray, columnNames);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.setDefaultEditor(Object.class, null);
+        table.getColumnModel().getColumn(0).setPreferredWidth(300);
+        table.getColumnModel().getColumn(1).setPreferredWidth(120);
+        table.getColumnModel().getColumn(2).setPreferredWidth(80);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
+        table.getColumnModel().getColumn(4).setPreferredWidth(240);
+
         JScrollPane scrollPane = new JScrollPane(table);
         catalogPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Set column sizes
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        table.setDefaultEditor(Object.class, null);
-        table.getColumnModel().getColumn(0).setPreferredWidth(300); // CD Name column size increased
-        table.getColumnModel().getColumn(1).setPreferredWidth(120); // Price column size adjusted
-        table.getColumnModel().getColumn(2).setPreferredWidth(80); // Stock column size
-        table.getColumnModel().getColumn(3).setPreferredWidth(100); // Genre column size
-        table.getColumnModel().getColumn(4).setPreferredWidth(200); // Distributor column size
+        return catalogPanel;
     }
-
-    //cd data
     private List<String[]> readCDData() {
         List<String[]> data = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) { // Corrected file name
@@ -136,6 +167,5 @@ public class AdminPanel extends JFrame{
     void deleteCD() {
         System.out.println("CD deleted");
     }
-
     
 }

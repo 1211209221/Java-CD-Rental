@@ -119,7 +119,7 @@ public class CD_Rental_System extends JFrame {
                     Customer cust = new Customer();
                     cust.setData(username, password);
 
-                    if (!cust.isUsernameTaken(username)) {
+                    if (cust.isUsernameTaken(username)) {
                         JOptionPane.showMessageDialog(registerDialog, "Username is already taken. Please choose another one.", "Error", JOptionPane.ERROR_MESSAGE);
                     } else if (!cust.isValidPassword(password)) {
                         JOptionPane.showMessageDialog(registerDialog, "Password must be at least 8 characters long and include at least one number, one special character, and one capital letter.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -221,6 +221,7 @@ public class CD_Rental_System extends JFrame {
                     loginDialog.dispose();
                     mainMenuFrame.setSize(900, 400);
                     mainMenuFrame.setLocationRelativeTo(null);
+                    dispose();
                     
                     //go to admin panel
                     AdminPanel adminPanel = new AdminPanel(mainMenuFrame, username); // Assuming username is already retrieved
