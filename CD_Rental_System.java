@@ -219,7 +219,12 @@ public class CD_Rental_System extends JFrame {
                 else if(isadmin){
                     JOptionPane.showMessageDialog(loginDialog, "Login successful! Redirecting to admin panel...");
                     loginDialog.dispose();
+                    mainMenuFrame.setSize(900, 400);
+                    mainMenuFrame.setLocationRelativeTo(null);
+                    
                     //go to admin panel
+                    AdminPanel adminPanel = new AdminPanel(mainMenuFrame, username); // Assuming username is already retrieved
+                    adminPanel.setVisible(true);
                 }
                 else {
                     JOptionPane.showMessageDialog(loginDialog, "Invalid username or password.", "Error", JOptionPane.ERROR_MESSAGE);
