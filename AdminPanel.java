@@ -143,19 +143,32 @@ public class AdminPanel extends JFrame{
                         infoPanel.add(new JLabel("Distributor: "));
                         infoPanel.add(new JLabel(distributor));
 
+                        JButton updateButton = new JButton("Update");
                         JButton deleteButton = new JButton("Remove");
+
+                        updateButton.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
+                                if (confirmUpdate == JOptionPane.YES_OPTION) {
+                                    
+                                }
+                            }
+                        });
+
                         deleteButton.addActionListener(new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
                                 int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to remove this CD?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
                                 if (confirmDelete == JOptionPane.YES_OPTION) {
                                     
-                                    }
                                 }
-                            });
+                            }
+                        });
 
+                        JPanel buttongrp = new JPanel();
+                        buttongrp.add(updateButton); buttongrp.add(deleteButton);
 
                         cdInfoDialog.add(infoPanel, BorderLayout.CENTER);
-                        cdInfoDialog.add(deleteButton, BorderLayout.SOUTH);
+                        cdInfoDialog.add(buttongrp, BorderLayout.SOUTH);
                         cdInfoDialog.setVisible(true);
                     }
                 }
