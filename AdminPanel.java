@@ -1,12 +1,13 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import java.math.BigDecimal;
 
 public class AdminPanel extends JFrame{
     String username;
@@ -73,8 +75,7 @@ public class AdminPanel extends JFrame{
         JButton viewButton = new JButton("View Rental Record", viewIcon);
         viewButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         viewButton.addActionListener(e -> {
-            // Handle view rental record button action
-            System.out.println("View rental record button clicked");
+            viewrentalrecord(mainMenuFrame);
         });
         buttonPanel.add(viewButton);
 
@@ -82,10 +83,7 @@ public class AdminPanel extends JFrame{
         ImageIcon feeIcon = new ImageIcon("image/fee.png");
         JButton feeButton = new JButton("Manage Fee", feeIcon);
         feeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        feeButton.addActionListener(e -> {
-            // Handle manage fee button action
-            System.out.println("Manage fee btn");
-        });
+        feeButton.addActionListener(e -> showFeeManagement(mainMenuFrame));
         feeButton.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonPanel.add(feeButton);
 
@@ -155,7 +153,7 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(1).setPreferredWidth(120);
         table.getColumnModel().getColumn(2).setPreferredWidth(80);
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(240);
+        table.getColumnModel().getColumn(4).setPreferredWidth(220);
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createCompoundBorder(
@@ -206,13 +204,12 @@ public class AdminPanel extends JFrame{
 
                         JButton updateButton = new JButton("Update");
                         JButton deleteButton = new JButton("Remove");
+                        JButton cancelButton = new JButton("Cancel");
 
                         //this part for update
                         updateButton.addActionListener(new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
-                                int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
-                                if (confirmUpdate == JOptionPane.YES_OPTION) {
-                                    String newCdName = cdNameField.getText().trim();
+                                String newCdName = cdNameField.getText().trim();
                                     String newPrice = priceField.getText().trim();
                                     String newStock = stockField.getText().trim();
                                     String newGenre = (String) genreComboBox.getSelectedItem();
@@ -247,6 +244,9 @@ public class AdminPanel extends JFrame{
                                         JOptionPane.showMessageDialog(cdInfoDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
                                         return; 
                                     }
+
+                                int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
+                                if (confirmUpdate == JOptionPane.YES_OPTION) {
 
                                     // Update data in memory
                                     String[] updatedRow = {newCdName, newPrice, newStock, newGenre, newDistributor};
@@ -286,8 +286,15 @@ public class AdminPanel extends JFrame{
                             }
                         });
 
+                        cancelButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                cdInfoDialog.dispose(); 
+                            }
+                        });
+
                         JPanel buttongrp = new JPanel();
-                        buttongrp.add(updateButton); buttongrp.add(deleteButton);
+                        buttongrp.add(updateButton); buttongrp.add(deleteButton); buttongrp.add(cancelButton);
 
                         cdInfoDialog.add(infoPanel, BorderLayout.CENTER);
                         cdInfoDialog.add(buttongrp, BorderLayout.SOUTH);
@@ -338,15 +345,23 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(1).setPreferredWidth(120);
         table.getColumnModel().getColumn(2).setPreferredWidth(80);
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(240);
+        table.getColumnModel().getColumn(4).setPreferredWidth(220);
     }
     //for reset table
     private void reset() {
         String[][] dataArray = allData.toArray(new String[0][]);
-
+        DecimalFormat decimalFormat = new DecimalFormat("#0.00");
+        
         for (String[] row : dataArray) {
             if (!row[1].startsWith("RM")) {
-                row[1] = "RM " + row[1];
+                try {
+                    double value = Double.parseDouble(row[1]);
+                    // Format the value to 2 decimal places
+                    row[1] = "RM " + decimalFormat.format(value);
+                } catch (NumberFormatException e) {
+                    // Handle the case where row[1] is not a valid number
+                    System.err.println("Invalid number format: " + row[1]);
+                }
             }
         }
 
@@ -358,7 +373,7 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(1).setPreferredWidth(120);
         table.getColumnModel().getColumn(2).setPreferredWidth(80);
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(240);
+        table.getColumnModel().getColumn(4).setPreferredWidth(220);
     }
     //for take out cd info
     private List<String[]> readCDData() {
@@ -391,11 +406,19 @@ public class AdminPanel extends JFrame{
 
     //for add cd dialog
     public void showAddCDDialog(JFrame mainMenuFrame){
-        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "Add CD", true);
-        cdInfoDialog.setSize(400, 300);
-        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+        JDialog addcdDialog = new JDialog(mainMenuFrame, "Add New CD", true);
+        addcdDialog.setSize(400, 300);
+        addcdDialog.setLocationRelativeTo(mainMenuFrame);
 
-        JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(Color.WHITE);
+        ImageIcon logoIcon = new ImageIcon("image/add.png"); 
+        JLabel titleLabel = new JLabel("Add New CD", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titlePanel.add(new JLabel(logoIcon));
+        titlePanel.add(titleLabel);
+
+        JPanel infoPanel = new JPanel(new GridLayout(6, 2, 10, 5)); // Adjust rows, columns, and gaps
         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
 
         JTextField cdNameField = new JTextField();
@@ -422,8 +445,6 @@ public class AdminPanel extends JFrame{
         //this part for add
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
-                if (confirmUpdate == JOptionPane.YES_OPTION) {
                 String newCdName = cdNameField.getText().trim();
                 String newPrice = priceField.getText().trim();
                 String newStock = stockField.getText().trim();
@@ -431,7 +452,7 @@ public class AdminPanel extends JFrame{
                 String newDistributor = distributorField.getText().trim();
 
                 if (newCdName.isEmpty() || newPrice.isEmpty() || newStock.isEmpty() || newDistributor.isEmpty()) {
-                    JOptionPane.showMessageDialog(cdInfoDialog, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(addcdDialog, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -440,11 +461,11 @@ public class AdminPanel extends JFrame{
                 try {
                     price = Double.parseDouble(newPrice);
                     if (price <= 0) {
-                        JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(addcdDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
                         return; 
                     }
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(cdInfoDialog, "Invalid price format.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(addcdDialog, "Invalid price format.", "Error", JOptionPane.ERROR_MESSAGE);
                     return; 
                 }
 
@@ -452,14 +473,16 @@ public class AdminPanel extends JFrame{
                 try {
                     stock = Integer.parseInt(newStock);
                     if (stock < 0) {
-                        JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(addcdDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
                         return; 
                     }
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(cdInfoDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(addcdDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
                     return; 
                 }
 
+                int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to add this CD?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
+                if (confirmUpdate == JOptionPane.YES_OPTION) {
                 //save data in memory
                 String[] newbookdata = {newCdName, newPrice, newStock, newGenre, newDistributor};
                 allData.add(newbookdata);
@@ -471,10 +494,10 @@ public class AdminPanel extends JFrame{
                 reset();
 
                 // Show success message
-                JOptionPane.showMessageDialog(cdInfoDialog, "CD is added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(addcdDialog, "CD is added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                 // Close the dialog
-                cdInfoDialog.dispose();
+                addcdDialog.dispose();
             }
         }
     });
@@ -483,12 +506,341 @@ public class AdminPanel extends JFrame{
 
     JPanel buttongrp = new JPanel();
     buttongrp.add(addButton); buttongrp.add(cancelButton);
-
-    cdInfoDialog.add(infoPanel, BorderLayout.CENTER);
-    cdInfoDialog.add(buttongrp, BorderLayout.SOUTH);
-    cdInfoDialog.setVisible(true);
+    cancelButton.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            addcdDialog.dispose(); 
+        }
+    });   
+    addcdDialog.add(titlePanel, BorderLayout.NORTH);
+    addcdDialog.add(infoPanel, BorderLayout.CENTER);
+    addcdDialog.add(buttongrp, BorderLayout.SOUTH);
+    addcdDialog.setVisible(true);
 }
+    //for view rental record
+    private void viewrentalrecord(JFrame mainMenuFrame) {
+        File rentedFolder = new File("records/rented");
+        File[] rentedFiles = rentedFolder.listFiles();
+        List<String[]> rentalData = new ArrayList<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        Pattern pattern = Pattern.compile("\"([^\"]+)\" (\\d+) (\\d{4}-\\d{2}-\\d{2})");
+        Pattern patternWithoutQuotes = Pattern.compile("([^\\d]+) (\\d+) (\\d{4}-\\d{2}-\\d{2})");
+
+        if (rentedFiles != null) {
+            for (File file : rentedFiles) {
+                if (file.isFile()) {
+                    //take the user name from filename
+                    String username = file.getName().replace(".txt", "");
+                    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            Matcher matcherWithQuotes = pattern.matcher(line);
+                            Matcher matcherWithoutQuotes = patternWithoutQuotes.matcher(line);
+                            if (matcherWithQuotes.matches()) {
+                                String cdName = matcherWithQuotes.group(1);
+                                String quantity = matcherWithQuotes.group(2);
+                                String dueDate = matcherWithQuotes.group(3);
+                                LocalDate dueDateParsed = LocalDate.parse(dueDate, dateFormatter);
+                                String status = dueDateParsed.isBefore(LocalDate.now()) ? "Overdue" : "Active";
+                                rentalData.add(new String[]{username, cdName, quantity, dueDate, status});
+                            } else if (matcherWithoutQuotes.matches()) {
+                                String cdName = matcherWithoutQuotes.group(1).trim();
+                                String quantity = matcherWithoutQuotes.group(2);
+                                String dueDate = matcherWithoutQuotes.group(3);
+                                LocalDate dueDateParsed = LocalDate.parse(dueDate, dateFormatter);
+                                String status = dueDateParsed.isBefore(LocalDate.now()) ? "Overdue" : "Active";
+                                rentalData.add(new String[]{username, cdName, quantity, dueDate, status});
+                            }else {
+                                System.err.println("Invalid data format in file: " + file.getName());
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(mainMenuFrame, "Error reading file: " + file.getName(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        }
+
+        //after read the current rental record, read the past record
+        File passRecordFile = new File("records/pastrecord.txt");
+        pattern = Pattern.compile("\"([^\"]+)\" (\\d+) (\\d{4}-\\d{2}-\\d{2}) \"([^\"]+)\"");
+        patternWithoutQuotes = Pattern.compile("([^\\d]+) (\\d+) (\\d{4}-\\d{2}-\\d{2}) \"([^\"]+)\"");
+        try (BufferedReader passRecordReader = new BufferedReader(new FileReader(passRecordFile))) {
+            String line;
+            while ((line = passRecordReader.readLine()) != null) {
+                Matcher matcherWithQuotes = pattern.matcher(line);
+                Matcher matcherWithoutQuotes = patternWithoutQuotes.matcher(line);
+                if (matcherWithQuotes.find()) {
+                    String cdName = matcherWithQuotes.group(1);
+                    String quantity = matcherWithQuotes.group(2);
+                    String dueDate = matcherWithQuotes.group(3);
+                    String user = matcherWithQuotes.group(4);
+                    String status = "Completed";
+                    rentalData.add(new String[]{user, cdName, quantity, dueDate, status});
+                } else if (matcherWithoutQuotes.find()) {
+                    String cdName = matcherWithoutQuotes.group(1).trim();
+                    String quantity = matcherWithoutQuotes.group(2);
+                    String dueDate = matcherWithoutQuotes.group(3);
+                    String user = matcherWithoutQuotes.group(4);
+                    String status = "Completed";
+                    rentalData.add(new String[]{user, cdName, quantity, dueDate, status});
+                }else {
+                    System.err.println("Invalid data format in line: " + line);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(mainMenuFrame, "Error reading passrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+
+        // Create the table with rental data
+        String[] columnNames = {"User", "CD Name", "Quantity", "Due Date", "Status"};
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+
+        for (String[] data : rentalData) {
+            model.addRow(data);
+        }
+
+        JTable table = new JTable(model);
+        table.setDefaultEditor(Object.class, null);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(new EmptyBorder(0, 10,0, 10));
+
+        table.getColumnModel().getColumn(0).setPreferredWidth(100);
+        table.getColumnModel().getColumn(1).setPreferredWidth(250);
+        table.getColumnModel().getColumn(2).setPreferredWidth(70);
+        table.getColumnModel().getColumn(3).setPreferredWidth(90);
+        table.getColumnModel().getColumn(4).setPreferredWidth(70);
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                //alignment
+                if (column == 2 || column == 3 || column == 4) { 
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    setHorizontalAlignment(SwingConstants.LEFT); 
+                }
+                //status 
+                if (column == 4) { // Status column
+                    String status = (String) value;
+                    if ("Overdue".equals(status)) {
+                        c.setForeground(Color.RED);
+                    } else if("Active".equals(status)) {
+                        c.setForeground(Color.GREEN);
+                    }else{
+                        c.setForeground(Color.BLUE);
+                    }
+                } else {
+                    c.setForeground(Color.BLACK); // Default color for other columns
+                }
+                return c; 
                 
+            }
+        };
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        // Create and set up the window
+        JFrame rentalFrame = new JFrame("Rental Records");
+        rentalFrame.setSize(600, 400);
+        rentalFrame.setLocationRelativeTo(null);
+        rentalFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        //title for this frame
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(Color.WHITE);
+        ImageIcon logoIcon = new ImageIcon("image/record.png"); 
+        JLabel titleLabel = new JLabel("Rental Record List", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titlePanel.add(new JLabel(logoIcon));
+        titlePanel.add(titleLabel);
+
+        //buttons
+        // Create buttons panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(Color.WHITE);
+        JButton allButton = new JButton("All");
+        JButton activeButton = new JButton("Active");
+        JButton overdueButton = new JButton("Overdue");
+        JButton completedButton = new JButton("Completed");
+
+        buttonPanel.add(allButton);
+        buttonPanel.add(activeButton);
+        buttonPanel.add(overdueButton);
+        buttonPanel.add(completedButton);
+
+        //for the button event listener
+        allButton.addActionListener(e -> filterrentedTable(model, rentalData, "All"));
+        activeButton.addActionListener(e -> filterrentedTable(model, rentalData, "Active"));
+        overdueButton.addActionListener(e -> filterrentedTable(model, rentalData, "Overdue"));
+        completedButton.addActionListener(e -> filterrentedTable(model, rentalData, "Completed"));
+
+        JPanel contentPane = new JPanel(new BorderLayout());
+        contentPane.add(titlePanel, BorderLayout.NORTH);
+        contentPane.add(scrollPane, BorderLayout.CENTER);
+        contentPane.add(buttonPanel, BorderLayout.SOUTH);
+
+        rentalFrame.setContentPane(contentPane);
+        rentalFrame.setVisible(true);
+    }
+    //filter rented table
+    private void filterrentedTable(DefaultTableModel model, List<String[]> rentalData, String filter) {
+        model.setRowCount(0); // Clear all rows from the table
+        //filter is rental status
+        for (String[] data : rentalData) {
+            if ("All".equals(filter)) {
+                model.addRow(data); // Add all data
+            } else if (data[4].equals(filter)) {
+                model.addRow(data); // Add chosen status data
+            }
+        }
+    }
+
+    private void showFeeManagement(JFrame mainMenuFrame) {
+        //Create new Dialog
+        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "Fee Management", true);
+        cdInfoDialog.setSize(400, 300);
+        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+        //Create new Panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+        //Set button name
+        JButton rentalFeeButton = new JButton("View Rental Fee");
+        JButton penaltyFeeButton = new JButton("View Penalty Fee");
+        JButton viewTotalRevenueButton = new JButton("View Total Revenue");
+        //Set button size
+        Dimension buttonSize = new Dimension(200, 50);
+        rentalFeeButton.setPreferredSize(buttonSize);
+        penaltyFeeButton.setPreferredSize(buttonSize);
+        viewTotalRevenueButton.setPreferredSize(buttonSize);
+        //Set button alignment
+        rentalFeeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        penaltyFeeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        viewTotalRevenueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Add vertical glue before the buttons to center them on Y axis
+        buttonPanel.add(Box.createVerticalGlue());
+        //Add space between buttons
+        buttonPanel.add(rentalFeeButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(penaltyFeeButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(viewTotalRevenueButton);
+        // Add vertical glue after the buttons to center them on Y axis
+        buttonPanel.add(Box.createVerticalGlue());
+        // Add buttonPanel to the dialog
+        cdInfoDialog.add(buttonPanel, BorderLayout.CENTER);
+        //Event Listener for Fee Management
+        rentalFeeButton.addActionListener(e -> {
+            String currentFee = "";
+            String filePath = "records/fee.txt";
+            try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    currentFee = line.split(" ")[0];
+                }
+                double fee = Double.parseDouble(currentFee);
+                String formattedFee = String.format("%.2f", fee);
+                String message = "The current rental fee is: RM" + formattedFee + ". Do you want to change it?";
+                Object[] options = {"Yes", "No"};
+                
+                int choice = JOptionPane.showOptionDialog(cdInfoDialog, message, "Rental Fee",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
+                if (choice == JOptionPane.YES_OPTION) {
+                    String newFee = JOptionPane.showInputDialog(cdInfoDialog, "Enter the new rental fee:");
+                    if (newFee != null)
+                    {
+                        // Validate the new fee
+                        try {
+                            new BigDecimal(newFee); // This checks if the new fee is a valid decimal number
+                            String[] columns = line.split(" "); // Assuming columns represent parts of the line
+                            columns[0] = newFee; // Update the fee in the array
+                            String newLine = String.join(" ", columns); // Join the array back into a string
+                            // Write the updated line back to the file, overwriting the existing content
+                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, false))) {
+                                writer.write(newLine);
+                            } catch (IOException writeFail) {
+                                writeFail.printStackTrace();
+                            }
+                            JOptionPane.showMessageDialog(cdInfoDialog, "Rental fee successfully edited.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(cdInfoDialog, "Invalid fee format. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+            } catch (IOException readfail) {
+                readfail.printStackTrace();
+            }
+        });
+        penaltyFeeButton.addActionListener(e -> {
+            String currentPenalty = "";
+            String filePath = "records/fee.txt";
+            try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    currentPenalty = line.split(" ")[1];
+                }
+                double fee = Double.parseDouble(currentPenalty);
+                String formattedFee = String.format("%.2f", fee);
+                String message = "The current penalty fee is: RM" + formattedFee + ". Do you want to change it?";
+                Object[] options = {"Yes", "No"};
+                
+                int choice = JOptionPane.showOptionDialog(cdInfoDialog, message, "Penalty Fee",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
+                if (choice == JOptionPane.YES_OPTION) {
+                    String newFee = JOptionPane.showInputDialog(cdInfoDialog, "Enter the new penalty fee:");
+                    if (newFee != null)
+                    {
+                        try {
+                            new BigDecimal(newFee);
+                            String[] columns = line.split(" ");
+                            columns[1] = newFee;
+                            String newLine = String.join(" ", columns);
+                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, false))) {
+                                writer.write(newLine);
+                            } catch (IOException writeFail) {
+                                writeFail.printStackTrace();
+                            }
+                            JOptionPane.showMessageDialog(cdInfoDialog, "Penalty fee successfully edited.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(cdInfoDialog, "Invalid fee format. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+            } catch (IOException readfail) {
+                readfail.printStackTrace();
+            }
+        });
+        viewTotalRevenueButton.addActionListener(e -> {
+            String total = "";
+            String ototal = "";
+            String filePath = "records/fee.txt";
+            try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    ototal = line.split(" ")[2];
+                    total = line.split(" ")[3];
+                }
+                double fee = Double.parseDouble(total);
+                double ofee = Double.parseDouble(ototal);
+                double totalfee = fee + ofee;
+                String formattedFee = String.format("%.2f", fee);
+                String oformattedFee = String.format("%.2f", ofee);
+                String totalformattedFee = String.format("%.2f", totalfee);
+                String message = "The Total Incurred Penalty Fees is RM " + oformattedFee + "\n" +
+                                 "The Total Money Earned From Renting is RM " + formattedFee + "\n" +
+                                 "Total Money Earned (including Penalty Fees) is RM " + totalformattedFee;
+                JOptionPane.showMessageDialog(cdInfoDialog, message, "Revenue Summary", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException readfail) {
+                readfail.printStackTrace();
+            }
+        });
+        cdInfoDialog.setVisible(true);
+    }
 
     //header
     private JPanel showHeader(JFrame mainMenuFrame, String title, String username, Runnable backButtonAction) {

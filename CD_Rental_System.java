@@ -1207,7 +1207,9 @@ private void updateInventoryAfterReturn(String cdName, int quantity) {
 
 private void removeRentedRecord(String username, String cdName, int quantity) {
     File rentedFile = new File("records/rented/" + username + ".txt");
+    File passRecordFile = new File("records/pastrecord.txt");
     List<String> remainingCDs = new ArrayList<>();
+    List<String> removedRecords = new ArrayList<>();
 
     try (BufferedReader reader = new BufferedReader(new FileReader(rentedFile))) {
         String line;
@@ -1221,7 +1223,8 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
             if (!rentedCDName.equals(cdName) || rentedQuantity != quantity) {
                 remainingCDs.add(line);
             } else if (rentedQuantity == quantity) {
-                // if the rented quantity matches the quantity to be removed, skip this line (it gets removed)
+                String includename = "\"" + rentedCDName + "\" " + rentedQuantity + " " + dueDate + " \"" + username + "\"";
+                removedRecords.add(includename);//the return record will store in pastrecord.txt
                 quantity -= rentedQuantity;
             } else {
                 // if the rented quantity is larger, decrease the quantity and keep the line with updated quantity
@@ -1242,6 +1245,16 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
         }
     } catch (IOException ex) {
         JOptionPane.showMessageDialog(this, "Error reading the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
+        ex.printStackTrace();
+    }
+
+    try (BufferedWriter addpassRecord = new BufferedWriter(new FileWriter(passRecordFile, true))) {
+        for (String removed : removedRecords) {
+            addpassRecord.write(removed);
+            addpassRecord.newLine();
+        }
+    } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "Error writing to passrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
     }
 }
