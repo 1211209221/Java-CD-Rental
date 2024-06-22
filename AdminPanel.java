@@ -227,7 +227,7 @@ public class AdminPanel extends JFrame{
                                     double price;
                                     try {
                                         price = Double.parseDouble(newPrice);
-                                        if (price < 0) {
+                                        if (price <= 0) {
                                             JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
                                             return; 
                                         }
@@ -239,7 +239,7 @@ public class AdminPanel extends JFrame{
                                     int stock;
                                     try {
                                         stock = Integer.parseInt(newStock);
-                                        if (stock <= 0) {
+                                        if (stock < 0) {
                                             JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
                                             return; 
                                         }
@@ -389,7 +389,7 @@ public class AdminPanel extends JFrame{
         return parts.toArray(new String[0]);
     }
 
-    //for add cd
+    //for add cd dialog
     public void showAddCDDialog(JFrame mainMenuFrame){
         JDialog cdInfoDialog = new JDialog(mainMenuFrame, "Add CD", true);
         cdInfoDialog.setSize(400, 300);
@@ -439,7 +439,7 @@ public class AdminPanel extends JFrame{
                 double price;
                 try {
                     price = Double.parseDouble(newPrice);
-                    if (price < 0) {
+                    if (price <= 0) {
                         JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
                         return; 
                     }
@@ -451,7 +451,7 @@ public class AdminPanel extends JFrame{
                 int stock;
                 try {
                     stock = Integer.parseInt(newStock);
-                    if (stock <= 0) {
+                    if (stock < 0) {
                         JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
                         return; 
                     }
@@ -460,11 +460,14 @@ public class AdminPanel extends JFrame{
                     return; 
                 }
 
-                // Update data in memory
-                String[] updatedRow = {newCdName, newPrice, newStock, newGenre, newDistributor};
+                //save data in memory
+                String[] newbookdata = {newCdName, newPrice, newStock, newGenre, newDistributor};
+                allData.add(newbookdata);
 
                 //go to a fucntion to add in cds.txt
+                addCD(newbookdata);
 
+                //reset table
                 reset();
 
                 // Show success message
@@ -517,8 +520,20 @@ public class AdminPanel extends JFrame{
         return titlePanel; // Return titlePanel if needed
     }
     
-    void addCD() {
-        System.out.println("CD added");
+    public void addCD(String [] newbookdata) {
+        //add new book to the file
+        String cdData = String.format("\"%s\" %.2f %d %s \"%s\"",
+                newbookdata[0], Double.parseDouble(newbookdata[1]), Integer.parseInt(newbookdata[2]), newbookdata[3], newbookdata[4]);
+        // Write the formatted CD data to the file
+        try (BufferedWriter addin = new BufferedWriter(new FileWriter("records/CDs.txt", true))) {
+            addin.write(cdData);
+            addin.newLine();
+            System.out.println("CD data added to file successfully.");
+            return;
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Error writing CD data to file.");
+        }
     }
 
     

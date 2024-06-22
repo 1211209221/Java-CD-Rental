@@ -254,7 +254,7 @@ public class CD_Rental_System extends JFrame {
                     dispose();
                     
                     //go to admin panel
-                    AdminPanel adminPanel = new AdminPanel(mainMenuFrame, username); // Assuming username is already retrieved
+                    AdminPanel adminPanel = new AdminPanel(mainMenuFrame, username);
                     adminPanel.setVisible(true);
                 }
                 else {
