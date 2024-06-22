@@ -317,7 +317,7 @@ public class CD_Rental_System extends JFrame {
         rentedButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPanel rentedPanel = createRentedPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
+                JPanel rentedPanel = RentedPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
                 mainMenuFrame.getContentPane().removeAll(); // Clear previous content
                 mainMenuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
                 mainMenuFrame.revalidate(); // Refresh frame
@@ -1028,7 +1028,7 @@ private void updateInventory(List<String> rentedCDs) {
     }
 }
 
-private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
+private JPanel RentedPanel(JFrame mainMenuFrame, String username) {
     JPanel rentedPanel = new JPanel(new BorderLayout());
 
     Runnable backButtonAction = () -> {
@@ -1133,11 +1133,10 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
     rentedPanel.add(tablePanel, BorderLayout.CENTER);
 
     JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Select the CDs to return the specific CD(s).<br> Late returns are fined RM 0.50/day for each CD rented.<br><br></html>");
-    JPanel tableWithDisclaimerPanel = new JPanel(new BorderLayout());
-    tableWithDisclaimerPanel.add(scrollPane, BorderLayout.CENTER);
-    tableWithDisclaimerPanel.add(disclaimerLabel, BorderLayout.SOUTH);
+    JPanel DisclaimerPanel = new JPanel(new BorderLayout());
+    DisclaimerPanel.add(disclaimerLabel);
 
-    rentedPanel.add(tableWithDisclaimerPanel, BorderLayout.CENTER);
+    rentedPanel.add(DisclaimerPanel, BorderLayout.SOUTH);
 
     return rentedPanel;
 }
