@@ -19,7 +19,10 @@ import javax.swing.table.DefaultTableModel;
 public class CD_Rental_System extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private double ratePerDay = 0.1;
+    String ratePerDay = "";
+    String filePath = "records/fee.txt";
+    String ratePerDayFormatted = "";
+    double fee = 0.0;
 
     public CD_Rental_System() {
         setTitle("Retro CD Rental System");
@@ -657,11 +660,20 @@ public class CD_Rental_System extends JFrame {
         // Scroll pane for table
         JScrollPane scrollPane = new JScrollPane(table);
         
-
-        String ratePerDayFormatted = String.format("%.2f", ratePerDay);
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line = reader.readLine();
+            if (line != null) {
+                ratePerDay = line.split(" ")[0];
+            }
+            fee = Double.parseDouble(ratePerDay);
+            ratePerDayFormatted = String.format("%.2f", fee);
+        } catch (IOException readfail) {
+            readfail.printStackTrace();
+        }
 
         // Create the disclaimer label with the formatted rate per day
         JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Total fee is calculated based on the base price and additional charges. Additional charges are RM " + ratePerDayFormatted + "/day for each book rented.<br></html>");
+        disclaimerLabel.setForeground(Color.RED);
         // Panel to hold the table and disclaimer label
         JPanel tableWithDisclaimerPanel = new JPanel(new BorderLayout());
 
@@ -724,7 +736,7 @@ public class CD_Rental_System extends JFrame {
 
                     // Calculate total cost
                     double price = getCDPrice(parts[0]);
-                    double totalCost = ((price + (days * ratePerDay)) * quantity);
+                    double totalCost = ((price + (days * fee)) * quantity);
 
                     // Add the calculated total cost and quantity to the parts array
                     String[] updatedParts = new String[5];
@@ -853,7 +865,7 @@ public class CD_Rental_System extends JFrame {
                             model.setValueAt(daysField.getText(), row, 2);
                             // Recalculate the price and total price
                             double price = getCDPrice(cdName);
-                            double totalCost = ((price + (ratePerDay * days)) * quantity);
+                            double totalCost = ((price + (fee * days)) * quantity);
                             model.setValueAt(String.format("RM %.2f", price), row, 3);
                             model.setValueAt(String.format("RM %.2f", totalCost), row, 4);
                             // Rewrite the file with the updated information
@@ -896,7 +908,7 @@ public class CD_Rental_System extends JFrame {
             double price = Double.parseDouble(((String) model.getValueAt(i, 3)).substring(3)); // Extract price from formatted string
 
             // Calculate total cost including daily rental rate
-            double totalCost = ((price + (ratePerDay * days)) * quantity);
+            double totalCost = ((price + (fee * days)) * quantity);
 
             totalQuantity += quantity;
             totalPrice += totalCost;
@@ -1132,7 +1144,24 @@ private JPanel RentedPanel(JFrame menuFrame, String username) {
     // Add tablePanel to the rentedPanel
     rentedPanel.add(tablePanel, BorderLayout.CENTER);
 
-    JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Select the CDs to return the specific CD(s).<br> Late returns are fined RM 0.50/day for each CD rented.<br><br></html>");
+    String currentPenalty = "";
+    String filePath = "records/fee.txt";
+    double fee = 0.0;
+    String formattedFee = "";
+    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        String line = reader.readLine();
+        if (line != null) {
+            currentPenalty = line.split(" ")[1];
+        }
+        fee = Double.parseDouble(currentPenalty);
+        formattedFee = String.format("%.2f", fee);
+    } catch (IOException readfail) {
+        readfail.printStackTrace();
+    }
+
+
+    JLabel disclaimerLabel = new JLabel("<html>**DISCLAIMER<br>Select the CDs to return the specific CD(s).<br> Late returns are fined RM" + formattedFee + "/day for each CD rented.<br><br></html>");
+    disclaimerLabel.setForeground(Color.RED);
     JPanel DisclaimerPanel = new JPanel(new BorderLayout());
     DisclaimerPanel.add(disclaimerLabel);
 
@@ -1149,7 +1178,7 @@ private void openReturnDialog(int selectedRow, DefaultTableModel model, String u
 
     LocalDate currentDate = LocalDate.now();
     int overdueDays = Period.between(dueDate, currentDate).getDays();
-    double penaltyFee = 0.5 * overdueDays;
+    double penaltyFee = fee * overdueDays;
 
     String message;
     if ("Overdue".equals(status)) {

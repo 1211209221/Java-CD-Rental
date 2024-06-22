@@ -6,17 +6,40 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.border.*;
 import java.math.BigDecimal;
+
+class IconHeaderRenderer extends DefaultTableCellRenderer {
+    private ImageIcon icon;
+
+    public IconHeaderRenderer(ImageIcon icon) {
+        this.icon = icon;
+        setHorizontalAlignment(JLabel.CENTER);
+        setHorizontalTextPosition(JLabel.LEFT);
+        //Preserving original table style
+        setBackground(UIManager.getColor("TableHeader.background"));
+    }
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        setText((String) value);
+        setIcon(icon);
+        return this;
+    }
+} 
 
 public class AdminPanel extends JFrame{
     String username;
@@ -44,6 +67,7 @@ public class AdminPanel extends JFrame{
         };
         
         JPanel headerPanel = showHeader(menuFrame, "Admin Panel", username, backButtonAction);
+        headerPanel.setBackground(Color.LIGHT_GRAY);
         mainp.add(headerPanel, BorderLayout.NORTH);
 
         JPanel buttonPanel = createButtonPanel(menuFrame);
@@ -149,11 +173,24 @@ public class AdminPanel extends JFrame{
         table = new JTable(dataArray, columnNames);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setDefaultEditor(Object.class, null);
-        table.getColumnModel().getColumn(0).setPreferredWidth(300);
-        table.getColumnModel().getColumn(1).setPreferredWidth(120);
-        table.getColumnModel().getColumn(2).setPreferredWidth(80);
-        table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(220);
+
+        ImageIcon originalIcon = new ImageIcon("image/sort_icon.png");
+        Image image = originalIcon.getImage().getScaledInstance(15, 15, Image.SCALE_SMOOTH);
+        ImageIcon sortIcon = new ImageIcon(image);
+        table.getTableHeader().setDefaultRenderer(new IconHeaderRenderer(sortIcon));
+
+        TableColumnModel columnModel = table.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(300);
+        columnModel.getColumn(1).setPreferredWidth(120);
+        columnModel.getColumn(2).setPreferredWidth(80);
+        columnModel.getColumn(3).setPreferredWidth(140);
+        columnModel.getColumn(4).setPreferredWidth(220);
+
+        // Enable sorting
+        table.setModel(new DefaultTableModel(dataArray, columnNames));
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
+        table.setRowSorter(sorter);
+        reset();
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createCompoundBorder(
@@ -189,7 +226,6 @@ public class AdminPanel extends JFrame{
                         JComboBox<String> genreComboBox = new JComboBox<>(new String[]{"Comedy", "Crime", "Sci-Fi", "Drame", "Action", "Historical", "Music", "Classical", "Folk"}); 
                         genreComboBox.setSelectedItem(genre);
                         JTextField distributorField = new JTextField(distributor);
-
                        
                         infoPanel.add(new JLabel("CD Name: "));
                         infoPanel.add(cdNameField);
@@ -210,40 +246,40 @@ public class AdminPanel extends JFrame{
                         updateButton.addActionListener(new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
                                 String newCdName = cdNameField.getText().trim();
-                                    String newPrice = priceField.getText().trim();
-                                    String newStock = stockField.getText().trim();
-                                    String newGenre = (String) genreComboBox.getSelectedItem();
-                                    String newDistributor = distributorField.getText().trim();
+                                String newPrice = priceField.getText().trim();
+                                String newStock = stockField.getText().trim();
+                                String newGenre = (String) genreComboBox.getSelectedItem();
+                                String newDistributor = distributorField.getText().trim();
 
-                                    if (newCdName.isEmpty() || newPrice.isEmpty() || newStock.isEmpty() || newDistributor.isEmpty()) {
-                                        JOptionPane.showMessageDialog(cdInfoDialog, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
-                                        return; // Stop further processing
-                                    }
+                                if (newCdName.isEmpty() || newPrice.isEmpty() || newStock.isEmpty() || newDistributor.isEmpty()) {
+                                    JOptionPane.showMessageDialog(cdInfoDialog, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
+                                    return; // Stop further processing
+                                }
 
-                                    //validate price and stock
-                                    double price;
-                                    try {
-                                        price = Double.parseDouble(newPrice);
-                                        if (price <= 0) {
-                                            JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
-                                            return; 
-                                        }
-                                    } catch (NumberFormatException ex) {
-                                        JOptionPane.showMessageDialog(cdInfoDialog, "Invalid price format.", "Error", JOptionPane.ERROR_MESSAGE);
+                                //validate price and stock
+                                double price;
+                                try {
+                                    price = Double.parseDouble(newPrice);
+                                    if (price <= 0) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
                                         return; 
                                     }
+                                } catch (NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(cdInfoDialog, "Invalid price format.", "Error", JOptionPane.ERROR_MESSAGE);
+                                    return; 
+                                }
 
-                                    int stock;
-                                    try {
-                                        stock = Integer.parseInt(newStock);
-                                        if (stock < 0) {
-                                            JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
-                                            return; 
-                                        }
-                                    } catch (NumberFormatException ex) {
-                                        JOptionPane.showMessageDialog(cdInfoDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
+                                int stock;
+                                try {
+                                    stock = Integer.parseInt(newStock);
+                                    if (stock < 0) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
                                         return; 
                                     }
+                                } catch (NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(cdInfoDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
+                                    return; 
+                                }
 
                                 int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
                                 if (confirmUpdate == JOptionPane.YES_OPTION) {
