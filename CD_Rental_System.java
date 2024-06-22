@@ -254,7 +254,7 @@ public class CD_Rental_System extends JFrame {
                     dispose();
                     
                     //go to admin panel
-                    AdminPanel adminPanel = new AdminPanel(mainMenuFrame, username);
+                    AdminPanel adminPanel = new AdminPanel(menuFrame, username);
                     adminPanel.setVisible(true);
                 }
                 else {
@@ -317,11 +317,11 @@ public class CD_Rental_System extends JFrame {
         rentedButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPanel rentedPanel = RentedPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
-                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
-                mainMenuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
-                mainMenuFrame.revalidate(); // Refresh frame
-                mainMenuFrame.repaint(); // Repaint frame
+                JPanel rentedPanel = RentedPanel(menuFrame, username); // Pass menuFrame instance
+                menuFrame.getContentPane().removeAll(); // Clear previous content
+                menuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
+                menuFrame.revalidate(); // Refresh frame
+                menuFrame.repaint(); // Repaint frame
             }
         });
     
@@ -1028,7 +1028,7 @@ private void updateInventory(List<String> rentedCDs) {
     }
 }
 
-private JPanel RentedPanel(JFrame mainMenuFrame, String username) {
+private JPanel RentedPanel(JFrame menuFrame, String username) {
     JPanel rentedPanel = new JPanel(new BorderLayout());
 
     Runnable backButtonAction = () -> {
