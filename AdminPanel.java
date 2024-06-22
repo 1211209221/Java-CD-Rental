@@ -23,7 +23,7 @@ public class AdminPanel extends JFrame{
     private JTable table;
     private List<String[]> allData;
 
-    public AdminPanel(JFrame mainMenuFrame, String username){
+    public AdminPanel(JFrame menuFrame, String username){
         this.username = username;
 
         setTitle("Retro CD Rental System");
@@ -43,13 +43,13 @@ public class AdminPanel extends JFrame{
             }
         };
         
-        JPanel headerPanel = showHeader(mainMenuFrame, "Admin Panel", username, backButtonAction);
+        JPanel headerPanel = showHeader(menuFrame, "Admin Panel", username, backButtonAction);
         mainp.add(headerPanel, BorderLayout.NORTH);
 
-        JPanel buttonPanel = createButtonPanel(mainMenuFrame);
+        JPanel buttonPanel = createButtonPanel(menuFrame);
         mainp.add(buttonPanel, BorderLayout.SOUTH);
 
-        JPanel catalogPanel = catalogPanel(mainMenuFrame);
+        JPanel catalogPanel = catalogPanel(menuFrame);
         mainp.add(catalogPanel, BorderLayout.CENTER);
         // Add mainPanel to JFrame
         add(mainp);
@@ -59,7 +59,7 @@ public class AdminPanel extends JFrame{
     }
 
     //for button below
-    private JPanel createButtonPanel(JFrame mainMenuFrame) {
+    private JPanel createButtonPanel(JFrame menuFrame) {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.setBackground(Color.LIGHT_GRAY);
 
@@ -67,7 +67,7 @@ public class AdminPanel extends JFrame{
         ImageIcon addIcon = new ImageIcon("image/add.png");
         JButton addButton = new JButton("Add New CD", addIcon);
         addButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        addButton.addActionListener(e -> showAddCDDialog(mainMenuFrame));
+        addButton.addActionListener(e -> showAddCDDialog(menuFrame));
         buttonPanel.add(addButton);
 
         // View Rental Record Button
@@ -75,7 +75,7 @@ public class AdminPanel extends JFrame{
         JButton viewButton = new JButton("View Rental Record", viewIcon);
         viewButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         viewButton.addActionListener(e -> {
-            viewrentalrecord(mainMenuFrame);
+            viewrentalrecord(menuFrame);
         });
         buttonPanel.add(viewButton);
 
@@ -83,7 +83,7 @@ public class AdminPanel extends JFrame{
         ImageIcon feeIcon = new ImageIcon("image/fee.png");
         JButton feeButton = new JButton("Manage Fee", feeIcon);
         feeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        feeButton.addActionListener(e -> showFeeManagement(mainMenuFrame));
+        feeButton.addActionListener(e -> showFeeManagement(menuFrame));
         feeButton.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonPanel.add(feeButton);
 
@@ -91,7 +91,7 @@ public class AdminPanel extends JFrame{
     }
 
     //cd data, inside include update and remove function
-    private JPanel catalogPanel(JFrame mainMenuFrame){
+    private JPanel catalogPanel(JFrame menuFrame){
         JPanel catalogPanel = new JPanel(new BorderLayout());
 
         JPanel searchButtonPanel = new JPanel(new BorderLayout());
@@ -120,13 +120,13 @@ public class AdminPanel extends JFrame{
 
         searchButton.addActionListener(e -> {
             // search function
-            String searchInput = JOptionPane.showInputDialog(mainMenuFrame, "Enter CD Name to search:", "Search CD", JOptionPane.PLAIN_MESSAGE);
+            String searchInput = JOptionPane.showInputDialog(menuFrame, "Enter CD Name to search:", "Search CD", JOptionPane.PLAIN_MESSAGE);
             if (searchInput != null) { 
                 searchInput = searchInput.trim(); 
                 if (!searchInput.isEmpty()) { 
-                    filter(searchInput, mainMenuFrame);
+                    filter(searchInput, menuFrame);
                 } else {
-                    JOptionPane.showMessageDialog(mainMenuFrame, "Search input cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(menuFrame, "Search input cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -176,9 +176,9 @@ public class AdminPanel extends JFrame{
                         String distributor = (String) table.getValueAt(selectedRow, 4);
 
                         // Create and display CD information window
-                        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "CD Information", true);
+                        JDialog cdInfoDialog = new JDialog(menuFrame, "CD Information", true);
                         cdInfoDialog.setSize(400, 300);
-                        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+                        cdInfoDialog.setLocationRelativeTo(menuFrame);
 
                         JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
                         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
@@ -325,14 +325,14 @@ public class AdminPanel extends JFrame{
         }
     }
     //for search 
-    private void filter(String searchInput, JFrame mainMenuFrame) {
+    private void filter(String searchInput, JFrame menuFrame) {
         // Retrieve data again
         String[][] filteredDataArray = allData.stream()
             .filter(row -> row[0].toLowerCase().contains(searchInput.toLowerCase()))
             .toArray(String[][]::new);
 
         if (filteredDataArray.length == 0) {
-            JOptionPane.showMessageDialog(mainMenuFrame, "No results found.", "Search Result", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(menuFrame, "No results found.", "Search Result", JOptionPane.INFORMATION_MESSAGE);
             reset();
             return;
         }
@@ -405,10 +405,10 @@ public class AdminPanel extends JFrame{
     }
 
     //for add cd dialog
-    public void showAddCDDialog(JFrame mainMenuFrame){
-        JDialog addcdDialog = new JDialog(mainMenuFrame, "Add New CD", true);
+    public void showAddCDDialog(JFrame menuFrame){
+        JDialog addcdDialog = new JDialog(menuFrame, "Add New CD", true);
         addcdDialog.setSize(400, 300);
-        addcdDialog.setLocationRelativeTo(mainMenuFrame);
+        addcdDialog.setLocationRelativeTo(menuFrame);
 
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         titlePanel.setBackground(Color.WHITE);
@@ -518,7 +518,7 @@ public class AdminPanel extends JFrame{
     addcdDialog.setVisible(true);
 }
     //for view rental record
-    private void viewrentalrecord(JFrame mainMenuFrame) {
+    private void viewrentalrecord(JFrame menuFrame) {
         File rentedFolder = new File("records/rented");
         File[] rentedFiles = rentedFolder.listFiles();
         List<String[]> rentalData = new ArrayList<>();
@@ -556,7 +556,7 @@ public class AdminPanel extends JFrame{
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
-                        JOptionPane.showMessageDialog(mainMenuFrame, "Error reading file: " + file.getName(), "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(menuFrame, "Error reading file: " + file.getName(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
@@ -591,7 +591,7 @@ public class AdminPanel extends JFrame{
             }
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(mainMenuFrame, "Error reading passrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(menuFrame, "Error reading passrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
         }
 
 
@@ -701,11 +701,11 @@ public class AdminPanel extends JFrame{
         }
     }
 
-    private void showFeeManagement(JFrame mainMenuFrame) {
+    private void showFeeManagement(JFrame menuFrame) {
         //Create new Dialog
-        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "Fee Management", true);
+        JDialog cdInfoDialog = new JDialog(menuFrame, "Fee Management", true);
         cdInfoDialog.setSize(400, 300);
-        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+        cdInfoDialog.setLocationRelativeTo(menuFrame);
         //Create new Panel
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
@@ -843,7 +843,7 @@ public class AdminPanel extends JFrame{
     }
 
     //header
-    private JPanel showHeader(JFrame mainMenuFrame, String title, String username, Runnable backButtonAction) {
+    private JPanel showHeader(JFrame menuFrame, String title, String username, Runnable backButtonAction) {
         JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setBackground(Color.WHITE);
         
@@ -867,7 +867,7 @@ public class AdminPanel extends JFrame{
     
         titlePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     
-        mainMenuFrame.add(titlePanel, BorderLayout.NORTH); // Add titlePanel to mainMenuFrame
+        menuFrame.add(titlePanel, BorderLayout.NORTH); // Add titlePanel to menuFrame
     
         return titlePanel; // Return titlePanel if needed
     }
