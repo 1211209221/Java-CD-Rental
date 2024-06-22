@@ -32,7 +32,7 @@ public class CD_Rental_System extends JFrame {
         panel.setLayout(new GridLayout(5, 1, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Add padding
         
-        showHome(panel); // Pass mainMenuFrame instance
+        showHome(panel); // Pass menuFrame instance
         add(panel);
 
         setVisible(true);
@@ -193,7 +193,7 @@ public class CD_Rental_System extends JFrame {
         registerDialog.setVisible(true);
     }
     
-    private String showLoginDialog(JFrame mainMenuFrame) {
+    private String showLoginDialog(JFrame menuFrame) {
         JDialog loginDialog = new JDialog(this, "Login", true);
         loginDialog.setSize(300, 200);
         loginDialog.setLocationRelativeTo(this);
@@ -241,20 +241,20 @@ public class CD_Rental_System extends JFrame {
                 if (isuser) {
                     JOptionPane.showMessageDialog(loginDialog, "Login successful! Redirecting to main menu...");
                     loginDialog.dispose();
-                    mainMenuFrame.setSize(900, 400);
-                    mainMenuFrame.setLocationRelativeTo(null);
-                    showMainMenu(mainMenuFrame, username);
+                    menuFrame.setSize(900, 400);
+                    menuFrame.setLocationRelativeTo(null);
+                    showMainMenu(menuFrame, username);
                     setVisible(false);
                 } 
                 else if(isadmin){
                     JOptionPane.showMessageDialog(loginDialog, "Login successful! Redirecting to admin panel...");
                     loginDialog.dispose();
-                    mainMenuFrame.setSize(900, 400);
-                    mainMenuFrame.setLocationRelativeTo(null);
+                    menuFrame.setSize(900, 400);
+                    menuFrame.setLocationRelativeTo(null);
                     dispose();
                     
                     //go to admin panel
-                    AdminPanel adminPanel = new AdminPanel(mainMenuFrame, username); // Assuming username is already retrieved
+                    AdminPanel adminPanel = new AdminPanel(menuFrame, username); // Assuming username is already retrieved
                     adminPanel.setVisible(true);
                 }
                 else {
@@ -267,10 +267,10 @@ public class CD_Rental_System extends JFrame {
         return usernameField.getText(); // Return the username
     }
 
-    private void showMainMenu(JFrame mainMenuFrame, String username) {
-        mainMenuFrame.getContentPane().removeAll(); // Clear current content
-        mainMenuFrame.revalidate(); // Refresh frame
-        mainMenuFrame.repaint(); // Repaint frame
+    private void showMainMenu(JFrame menuFrame, String username) {
+        menuFrame.getContentPane().removeAll(); // Clear current content
+        menuFrame.revalidate(); // Refresh frame
+        menuFrame.repaint(); // Repaint frame
     
         // Create panel for buttons with FlowLayout to center buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 70, 70));
@@ -295,51 +295,51 @@ public class CD_Rental_System extends JFrame {
         catalogButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPanel catalogPanel = createCatalogPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
-                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
-                mainMenuFrame.add(catalogPanel, BorderLayout.CENTER); // Add catalog panel
-                mainMenuFrame.revalidate(); // Refresh frame
-                mainMenuFrame.repaint(); // Repaint frame
+                JPanel catalogPanel = createCatalogPanel(menuFrame, username); // Pass menuFrame instance
+                menuFrame.getContentPane().removeAll(); // Clear previous content
+                menuFrame.add(catalogPanel, BorderLayout.CENTER); // Add catalog panel
+                menuFrame.revalidate(); // Refresh frame
+                menuFrame.repaint(); // Repaint frame
             }
         });
     
         cartButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPanel cartPanel = createCartPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
-                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
-                mainMenuFrame.add(cartPanel, BorderLayout.CENTER); // Add catalog panel
-                mainMenuFrame.revalidate(); // Refresh frame
-                mainMenuFrame.repaint(); // Repaint frame
+                JPanel cartPanel = createCartPanel(menuFrame, username); // Pass menuFrame instance
+                menuFrame.getContentPane().removeAll(); // Clear previous content
+                menuFrame.add(cartPanel, BorderLayout.CENTER); // Add catalog panel
+                menuFrame.revalidate(); // Refresh frame
+                menuFrame.repaint(); // Repaint frame
             }
         });
     
         rentedButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPanel rentedPanel = createRentedPanel(mainMenuFrame, username); // Pass mainMenuFrame instance
-                mainMenuFrame.getContentPane().removeAll(); // Clear previous content
-                mainMenuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
-                mainMenuFrame.revalidate(); // Refresh frame
-                mainMenuFrame.repaint(); // Repaint frame
+                JPanel rentedPanel = createRentedPanel(menuFrame, username); // Pass menuFrame instance
+                menuFrame.getContentPane().removeAll(); // Clear previous content
+                menuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
+                menuFrame.revalidate(); // Refresh frame
+                menuFrame.repaint(); // Repaint frame
             }
         });
     
         Runnable backButtonAction = () -> {
             int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
             if (confirmDelete == JOptionPane.YES_OPTION) {
-                mainMenuFrame.dispose(); // Close the current frame
+                menuFrame.dispose(); // Close the current frame
                 CD_Rental_System newSystem = new CD_Rental_System(); // Create a new instance of CD_Rental_System
                 newSystem.setVisible(true); // Make the new frame visible
             }
         };
     
-        showHeader(mainMenuFrame, "Main Menu", username, backButtonAction);
+        showHeader(menuFrame, "Main Menu", username, backButtonAction);
     
         // Add button panel to main frame
-        mainMenuFrame.add(buttonPanel, BorderLayout.CENTER);
+        menuFrame.add(buttonPanel, BorderLayout.CENTER);
     
-        mainMenuFrame.setVisible(true);
+        menuFrame.setVisible(true);
     }
     
     private JButton createImageButton(String text, String imagePath) {
@@ -392,9 +392,9 @@ public class CD_Rental_System extends JFrame {
         titlePanel.add(pageTitleLabel, BorderLayout.CENTER);
 
         ImageIcon userIcon = new ImageIcon("image/usericon.png");
-        JLabel welcomeLabel = new JLabel(username, userIcon, SwingConstants.RIGHT);
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
-        titlePanel.add(welcomeLabel, BorderLayout.EAST);
+        JLabel userLabel = new JLabel(username, userIcon, SwingConstants.RIGHT);
+        userLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        titlePanel.add(userLabel, BorderLayout.EAST);
 
         titlePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -424,9 +424,9 @@ public class CD_Rental_System extends JFrame {
         headerPanel.add(pageTitleLabel, BorderLayout.CENTER);
     
         ImageIcon userIcon = new ImageIcon("image/usericon.png");
-        JLabel welcomeLabel = new JLabel(username, userIcon, SwingConstants.RIGHT);
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
-        headerPanel.add(welcomeLabel, BorderLayout.EAST);
+        JLabel userLabel = new JLabel(username, userIcon, SwingConstants.RIGHT);
+        userLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        headerPanel.add(userLabel, BorderLayout.EAST);
     
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     
@@ -471,18 +471,18 @@ public class CD_Rental_System extends JFrame {
         return stockQuantity;
     }
 
-    private JPanel createCatalogPanel(JFrame mainMenuFrame, String username) {
+    private JPanel createCatalogPanel(JFrame menuFrame, String username) {
         Runnable backButtonAction = () -> {
-            mainMenuFrame.getContentPane().removeAll(); // Clear current content
-            showMainMenu(mainMenuFrame, username); // Pass the username when returning to the main menu
-            mainMenuFrame.revalidate(); // Refresh frame
-            mainMenuFrame.repaint(); // Repaint frame
+            menuFrame.getContentPane().removeAll(); // Clear current content
+            showMainMenu(menuFrame, username); // Pass the username when returning to the main menu
+            menuFrame.revalidate(); // Refresh frame
+            menuFrame.repaint(); // Repaint frame
         };
         
 
         JPanel catalogPanel = new JPanel(new BorderLayout());
 
-        JPanel headerPanel = headerPanel(mainMenuFrame, "Catalog", username, backButtonAction);
+        JPanel headerPanel = headerPanel(menuFrame, "Catalog", username, backButtonAction);
 
         catalogPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
 
@@ -524,9 +524,9 @@ public class CD_Rental_System extends JFrame {
                         String distributor = (String) table.getValueAt(selectedRow, 4);
 
                         // Create and display CD information window
-                        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "CD Information", true);
+                        JDialog cdInfoDialog = new JDialog(menuFrame, "CD Information", true);
                         cdInfoDialog.setSize(400, 300);
-                        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+                        cdInfoDialog.setLocationRelativeTo(menuFrame);
 
                         // Use a GridLayout with 8 rows and 2 columns for the infoPanel
                         JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
@@ -617,21 +617,21 @@ public class CD_Rental_System extends JFrame {
     private JLabel cartTotalQuantityValueLabel;
     private JLabel cartTotalPriceValueLabel;
     
-    private JPanel createCartPanel(JFrame mainMenuFrame, String username) {
+    private JPanel createCartPanel(JFrame menuFrame, String username) {
         JPanel cartPanel = new JPanel(new BorderLayout());
         
         Runnable backButtonAction = () -> {
-            mainMenuFrame.getContentPane().removeAll(); // Clear current content
-            showMainMenu(mainMenuFrame, username); // Pass the username when returning to the main menu
-            mainMenuFrame.revalidate(); // Refresh frame
-            mainMenuFrame.repaint(); // Repaint frame
+            menuFrame.getContentPane().removeAll(); // Clear current content
+            showMainMenu(menuFrame, username); // Pass the username when returning to the main menu
+            menuFrame.revalidate(); // Refresh frame
+            menuFrame.repaint(); // Repaint frame
         };
 
         // Initialize instance variables
         cartTotalQuantityValueLabel = new JLabel();
         cartTotalPriceValueLabel = new JLabel();
 
-        JPanel headerPanel = headerPanel(mainMenuFrame, "Cart", username, backButtonAction);
+        JPanel headerPanel = headerPanel(menuFrame, "Cart", username, backButtonAction);
         cartPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
 
         // Table to display CDs information
@@ -696,10 +696,10 @@ public class CD_Rental_System extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 rentCDs(username);
                 // Refresh the cart panel after renting
-                mainMenuFrame.getContentPane().removeAll();
-                mainMenuFrame.getContentPane().add(createCartPanel(mainMenuFrame, username));
-                mainMenuFrame.revalidate();
-                mainMenuFrame.repaint();
+                menuFrame.getContentPane().removeAll();
+                menuFrame.getContentPane().add(createCartPanel(menuFrame, username));
+                menuFrame.revalidate();
+                menuFrame.repaint();
             }
         });
 
@@ -1028,17 +1028,17 @@ private void updateInventory(List<String> rentedCDs) {
     }
 }
 
-private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
+private JPanel createRentedPanel(JFrame menuFrame, String username) {
     JPanel rentedPanel = new JPanel(new BorderLayout());
 
     Runnable backButtonAction = () -> {
-        mainMenuFrame.getContentPane().removeAll(); // Clear current content
-        showMainMenu(mainMenuFrame, username); // Pass the username when returning to the main menu
-        mainMenuFrame.revalidate(); // Refresh frame
-        mainMenuFrame.repaint(); // Repaint frame
+        menuFrame.getContentPane().removeAll(); // Clear current content
+        showMainMenu(menuFrame, username); // Pass the username when returning to the main menu
+        menuFrame.revalidate(); // Refresh frame
+        menuFrame.repaint(); // Repaint frame
     };
 
-    JPanel headerPanel = headerPanel(mainMenuFrame, "Rented CDs", username, backButtonAction);
+    JPanel headerPanel = headerPanel(menuFrame, "Rented CDs", username, backButtonAction);
     rentedPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
 
     // Table to display rented CDs information
