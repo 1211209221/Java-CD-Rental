@@ -78,7 +78,7 @@ public class AdminPanel extends JFrame{
 
         JPanel searchButtonPanel = new JPanel(new BorderLayout());
         searchButtonPanel.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5)); 
-        JLabel infoLabel = new JLabel(" Click any row to update information or delete.");
+        JLabel infoLabel = new JLabel(" Click any row to edit information or delete.");
         infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
         ImageIcon refreshIcon = new ImageIcon("image/refresh.png");
@@ -187,6 +187,7 @@ public class AdminPanel extends JFrame{
                         JButton updateButton = new JButton("Update");
                         JButton deleteButton = new JButton("Remove");
 
+                        //this part for update
                         updateButton.addActionListener(new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
                                 int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
@@ -246,11 +247,21 @@ public class AdminPanel extends JFrame{
                             }
                         });
 
+                        //this part for delete
                         deleteButton.addActionListener(new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
                                 int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to remove this CD?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
                                 if (confirmDelete == JOptionPane.YES_OPTION) {
+                                    //remove the row from the array list
+                                    allData.remove(selectedRow);
+                                    saveDataToFile(allData);
                                     
+                                    reset();
+
+                                    //success message
+                                    JOptionPane.showMessageDialog(cdInfoDialog, "CD removed successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                    // Close the dialog
+                                    cdInfoDialog.dispose();
                                 }
                             }
                         });
@@ -286,6 +297,7 @@ public class AdminPanel extends JFrame{
             JOptionPane.showMessageDialog(null, "Error saving data to file.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    //for search 
     private void filter(String searchInput, JFrame mainMenuFrame) {
         // Retrieve data again
         String[][] filteredDataArray = allData.stream()
@@ -308,6 +320,7 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
         table.getColumnModel().getColumn(4).setPreferredWidth(240);
     }
+    //for reset table
     private void reset() {
         String[][] dataArray = allData.toArray(new String[0][]);
 
@@ -327,6 +340,7 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
         table.getColumnModel().getColumn(4).setPreferredWidth(240);
     }
+    //for take out cd info
     private List<String[]> readCDData() {
         List<String[]> data = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) { // Corrected file name
@@ -389,12 +403,5 @@ public class AdminPanel extends JFrame{
         System.out.println("CD added");
     }
 
-    void editCD() {
-        System.out.println("CD edited");
-    }
-
-    void deleteCD() {
-        System.out.println("CD deleted");
-    }
     
 }
