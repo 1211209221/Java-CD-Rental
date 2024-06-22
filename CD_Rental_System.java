@@ -241,20 +241,26 @@ public class CD_Rental_System extends JFrame {
         mainMenuFrame.getContentPane().removeAll(); // Clear current content
         mainMenuFrame.revalidate(); // Refresh frame
         mainMenuFrame.repaint(); // Repaint frame
-
-        // Create panel for buttons
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 4));
-
-        // Create buttons
-        JButton catalogButton = new JButton("Catalog");
-        JButton cartButton = new JButton("Cart");
-        JButton rentedButton = new JButton("Rented");
-
+    
+        // Create panel for buttons with FlowLayout to center buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 70, 70));
+    
+        // Create buttons with fixed size
+        JButton catalogButton = createImageButton("Catalog", "image/CD_icon.png");
+        JButton cartButton = createImageButton("Cart", "image/cart_icon.png");
+        JButton rentedButton = createImageButton("Rented", "image/rentedCDs_icon.png");
+    
+        // Set the preferred size of the buttons
+        Dimension buttonSize = new Dimension(160, 170);
+        catalogButton.setPreferredSize(buttonSize);
+        cartButton.setPreferredSize(buttonSize);
+        rentedButton.setPreferredSize(buttonSize);
+    
         // Add buttons to panel
         buttonPanel.add(catalogButton);
         buttonPanel.add(cartButton);
         buttonPanel.add(rentedButton);
-
+    
         // Add action listeners
         catalogButton.addActionListener(new ActionListener() {
             @Override
@@ -266,7 +272,7 @@ public class CD_Rental_System extends JFrame {
                 mainMenuFrame.repaint(); // Repaint frame
             }
         });
-
+    
         cartButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -277,7 +283,7 @@ public class CD_Rental_System extends JFrame {
                 mainMenuFrame.repaint(); // Repaint frame
             }
         });
-
+    
         rentedButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -288,8 +294,7 @@ public class CD_Rental_System extends JFrame {
                 mainMenuFrame.repaint(); // Repaint frame
             }
         });
-
-
+    
         Runnable backButtonAction = () -> {
             int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
             if (confirmDelete == JOptionPane.YES_OPTION) {
@@ -298,21 +303,57 @@ public class CD_Rental_System extends JFrame {
                 newSystem.setVisible(true); // Make the new frame visible
             }
         };
-
+    
         showHeader(mainMenuFrame, "Main Menu", username, backButtonAction);
-
+    
         // Add button panel to main frame
         mainMenuFrame.add(buttonPanel, BorderLayout.CENTER);
-
+    
         mainMenuFrame.setVisible(true);
     }
+    
+    private JButton createImageButton(String text, String imagePath) {
+        JButton button = new JButton(text);
+        ImageIcon icon = new ImageIcon(imagePath);
+    
+        // Resize the image to fit the button
+        Image image = icon.getImage();
+        Image resizedImage = image.getScaledInstance(140, 140, java.awt.Image.SCALE_SMOOTH); // Set desired image size
+        icon = new ImageIcon(resizedImage);
+    
+        button.setIcon(icon);
+        button.setVerticalTextPosition(SwingConstants.BOTTOM);
+        button.setHorizontalTextPosition(SwingConstants.CENTER);
+    
+        // Optional: customize button size and layout
+        button.setPreferredSize(new Dimension(160, 160));
+        button.setMargin(new Insets(5, 5, 5, 5));
+        button.setFocusable(false); // Remove focus outline
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+
+        button.setBackground(Color.WHITE);
+        button.setForeground(Color.BLACK);
+        button.setOpaque(true);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+
+        
+    
+        return button;
+    }
+    
     
     private static void showHeader(JFrame frame, String title, String username, Runnable backButtonAction) {
         JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setBackground(Color.WHITE);
 
         // Create and add button to the left of the title
-        JButton backButton = new JButton("Back");
+        ImageIcon icon = new ImageIcon("image/logout.png");
+        JButton backButton = new JButton(icon);
+        backButton.setPreferredSize(new Dimension(30, 30));
+        backButton.setToolTipText("Log out");
+        backButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        backButton.setBackground(Color.WHITE); 
         backButton.addActionListener(e -> backButtonAction.run()); // Trigger the provided function when the button is clicked
         titlePanel.add(backButton, BorderLayout.WEST);
 
@@ -320,7 +361,8 @@ public class CD_Rental_System extends JFrame {
         pageTitleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titlePanel.add(pageTitleLabel, BorderLayout.CENTER);
 
-        JLabel welcomeLabel = new JLabel("User: " + username, SwingConstants.RIGHT);
+        ImageIcon userIcon = new ImageIcon("image/usericon.png");
+        JLabel welcomeLabel = new JLabel(username, userIcon, SwingConstants.RIGHT);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
         titlePanel.add(welcomeLabel, BorderLayout.EAST);
 
@@ -332,24 +374,34 @@ public class CD_Rental_System extends JFrame {
     private JPanel headerPanel(JFrame frame, String title, String username, Runnable backButtonAction) {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Color.WHITE);
-
-        // Create and add button to the left of the title
-        JButton backButton = new JButton("Back");
+    
+        // Load and resize icon
+        ImageIcon icon = new ImageIcon("image/back.png");
+        Image image = icon.getImage(); // Transform ImageIcon to Image
+        Image resizedImage = image.getScaledInstance(30, 30, java.awt.Image.SCALE_SMOOTH); // Resize image to fit button
+        ImageIcon resizedIcon = new ImageIcon(resizedImage); // Transform Image back to ImageIcon
+    
+        JButton backButton = new JButton(resizedIcon);
+        backButton.setPreferredSize(new Dimension(30, 30));
+        backButton.setToolTipText("Log out");
+        backButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        backButton.setBackground(Color.WHITE); 
         backButton.addActionListener(e -> backButtonAction.run()); // Trigger the provided function when the button is clicked
         headerPanel.add(backButton, BorderLayout.WEST);
-
+    
         JLabel pageTitleLabel = new JLabel(title, SwingConstants.CENTER);
         pageTitleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         headerPanel.add(pageTitleLabel, BorderLayout.CENTER);
-
-        JLabel welcomeLabel = new JLabel("User: " + username, SwingConstants.RIGHT);
+    
+        ImageIcon userIcon = new ImageIcon("image/usericon.png");
+        JLabel welcomeLabel = new JLabel(username, userIcon, SwingConstants.RIGHT);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
         headerPanel.add(welcomeLabel, BorderLayout.EAST);
-
+    
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
+    
         frame.add(headerPanel, BorderLayout.NORTH);
-        
+    
         return headerPanel;
     }
     
@@ -421,11 +473,11 @@ public class CD_Rental_System extends JFrame {
         // Set column sizes
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setDefaultEditor(Object.class, null);
-        table.getColumnModel().getColumn(0).setPreferredWidth(300); // CD Name column size increased
+        table.getColumnModel().getColumn(0).setPreferredWidth(350); // CD Name column size increased
         table.getColumnModel().getColumn(1).setPreferredWidth(120); // Price column size adjusted
         table.getColumnModel().getColumn(2).setPreferredWidth(80); // Stock column size
         table.getColumnModel().getColumn(3).setPreferredWidth(100); // Genre column size
-        table.getColumnModel().getColumn(4).setPreferredWidth(200); // Distributor column size
+        table.getColumnModel().getColumn(4).setPreferredWidth(233); // Distributor column size
 
         // Add selection listener to the table
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -520,6 +572,7 @@ public class CD_Rental_System extends JFrame {
                                 }
                             }
                         });
+                        table.clearSelection();
 
                         cdInfoDialog.add(infoPanel);
                         cdInfoDialog.setVisible(true);
@@ -1037,8 +1090,7 @@ private JPanel createRentedPanel(JFrame mainMenuFrame, String username) {
         }
         reader.close();
     } catch (IOException ex) {
-        JOptionPane.showMessageDialog(this, "Error reading the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
-        ex.printStackTrace();
+      
     } catch (DateTimeParseException ex) {
         JOptionPane.showMessageDialog(this, "Error parsing the due date in the rented CDs file for user: " + username, "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();

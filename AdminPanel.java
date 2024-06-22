@@ -21,12 +21,13 @@ public class AdminPanel extends JFrame{
         this.username = username;
 
         setTitle("Retro CD Rental System");
-        setSize(900, 400);
+        setSize(1000, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel mainp = new JPanel(new BorderLayout());
         
+        //Logout Button
         Runnable backButtonAction = () -> {
             int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
             if (confirmDelete == JOptionPane.YES_OPTION) {
@@ -57,13 +58,19 @@ public class AdminPanel extends JFrame{
         });
         buttonPanel.add(viewButton);
 
+        //Edit CD Button
+        JButton editButton = new JButton("Edit CD");
+        editButton.addActionListener(e-> {
+            // Handle edit button action
+            System.out.println("Edit button clicked");
+        });
+        buttonPanel.add(editButton);
 
         mainp.add(buttonPanel, BorderLayout.SOUTH);
 
         // Catalog Panel (Center)
         JPanel catalogPanel = catalogPanel(mainMenuFrame);
         mainp.add(catalogPanel, BorderLayout.CENTER);
-
         // Add mainPanel to JFrame
         add(mainp);
 
@@ -106,6 +113,7 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(2).setPreferredWidth(80);
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
         table.getColumnModel().getColumn(4).setPreferredWidth(240);
+        //table.getColumnModel().getColumn(0).setPreferredWidth(20);
 
         JScrollPane scrollPane = new JScrollPane(table);
         catalogPanel.add(searchButtonPanel, BorderLayout.NORTH);
@@ -132,6 +140,10 @@ public class AdminPanel extends JFrame{
                         JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
                         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
 
+                        int rowNum = 1;
+
+                        infoPanel.add(new JLabel("No: "));
+                        infoPanel.add(new JLabel(String.valueOf(rowNum++)));
                         infoPanel.add(new JLabel("CD Name: "));
                         infoPanel.add(new JLabel(cdName));
                         infoPanel.add(new JLabel("Price: "));
