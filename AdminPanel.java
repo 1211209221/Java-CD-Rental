@@ -103,11 +103,13 @@ public class AdminPanel extends JFrame{
         searchButton.addActionListener(e -> {
             // search function
             String searchInput = JOptionPane.showInputDialog(mainMenuFrame, "Enter CD Name to search:", "Search CD", JOptionPane.PLAIN_MESSAGE);
-            if (searchInput == null || searchInput.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(mainMenuFrame, "Search input cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
-            } else {
-                // Perform search and update table model
-                filter(searchInput.trim(), mainMenuFrame);
+            if (searchInput != null) { 
+                searchInput = searchInput.trim(); 
+                if (!searchInput.isEmpty()) { 
+                    filter(searchInput, mainMenuFrame);
+                } else {
+                    JOptionPane.showMessageDialog(mainMenuFrame, "Search input cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
@@ -160,21 +162,27 @@ public class AdminPanel extends JFrame{
                         cdInfoDialog.setSize(400, 300);
                         cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
 
-                        // Use a GridLayout with 8 rows and 2 columns for the infoPanel
                         JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
                         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
 
+                        JTextField cdNameField = new JTextField(cdName);
+                        JTextField priceField = new JTextField(price.replace("RM ", ""));
+                        JTextField stockField = new JTextField(stock);
+                        JComboBox<String> genreComboBox = new JComboBox<>(new String[]{"Comedy", "Crime", "Sci-Fi", "Drame", "Action", "Historical", "Music", "Classical", "Folk"}); 
+                        genreComboBox.setSelectedItem(genre);
+                        JTextField distributorField = new JTextField(distributor);
+
                        
                         infoPanel.add(new JLabel("CD Name: "));
-                        infoPanel.add(new JLabel(cdName));
-                        infoPanel.add(new JLabel("Price: "));
-                        infoPanel.add(new JLabel(price));
+                        infoPanel.add(cdNameField);
+                        infoPanel.add(new JLabel("Price (RM) : "));
+                        infoPanel.add(priceField);
                         infoPanel.add(new JLabel("Stock: "));
-                        infoPanel.add(new JLabel(stock));
+                        infoPanel.add(stockField);
                         infoPanel.add(new JLabel("Genre: "));
-                        infoPanel.add(new JLabel(genre));
+                        infoPanel.add(genreComboBox);
                         infoPanel.add(new JLabel("Distributor: "));
-                        infoPanel.add(new JLabel(distributor));
+                        infoPanel.add(distributorField);
 
                         JButton updateButton = new JButton("Update");
                         JButton deleteButton = new JButton("Remove");
@@ -183,7 +191,57 @@ public class AdminPanel extends JFrame{
                             public void actionPerformed(ActionEvent e) {
                                 int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
                                 if (confirmUpdate == JOptionPane.YES_OPTION) {
-                                    
+                                    String newCdName = cdNameField.getText().trim();
+                                    String newPrice = priceField.getText().trim();
+                                    String newStock = stockField.getText().trim();
+                                    String newGenre = (String) genreComboBox.getSelectedItem();
+                                    String newDistributor = distributorField.getText().trim();
+
+                                    if (newCdName.isEmpty() || newPrice.isEmpty() || newStock.isEmpty() || newDistributor.isEmpty()) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return; // Stop further processing
+                                    }
+
+                                    //validate price and stock
+                                    double price;
+                                    try {
+                                        price = Double.parseDouble(newPrice);
+                                        if (price < 0) {
+                                            JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
+                                            return; 
+                                        }
+                                    } catch (NumberFormatException ex) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Invalid price format.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return; 
+                                    }
+
+                                    int stock;
+                                    try {
+                                        stock = Integer.parseInt(newStock);
+                                        if (stock <= 0) {
+                                            JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
+                                            return; 
+                                        }
+                                    } catch (NumberFormatException ex) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return; 
+                                    }
+
+                                    // Update data in memory
+                                    String[] updatedRow = {newCdName, newPrice, newStock, newGenre, newDistributor};
+                                    allData.set(selectedRow, updatedRow);
+
+                                    // Save updated data to file (you need to implement this)
+                                    saveDataToFile(allData);
+
+                                    // Refresh table with updated data
+                                    reset();
+
+                                    // Show success message
+                                    JOptionPane.showMessageDialog(cdInfoDialog, "CD information updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                                    // Close the dialog
+                                    cdInfoDialog.dispose();
                                 }
                             }
                         });
@@ -210,6 +268,24 @@ public class AdminPanel extends JFrame{
 
         return catalogPanel;
     }
+    //for update cd information
+    private void saveDataToFile(List<String[]> data) {
+
+        try (BufferedWriter putin = new BufferedWriter(new FileWriter("records/CDs.txt"))) {
+            for (String[] row : data) {
+                String priceString = row[1].replace("RM ", "");
+                double price = Double.parseDouble(priceString);
+                int stock = Integer.parseInt(row[2]);
+
+                putin.write(String.format("\"%s\" %.2f %d %s \"%s\"",
+                row[0], price, stock, row[3], row[4]));
+                putin.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error saving data to file.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
     private void filter(String searchInput, JFrame mainMenuFrame) {
         // Retrieve data again
         String[][] filteredDataArray = allData.stream()
@@ -234,6 +310,12 @@ public class AdminPanel extends JFrame{
     }
     private void reset() {
         String[][] dataArray = allData.toArray(new String[0][]);
+
+        for (String[] row : dataArray) {
+            if (!row[1].startsWith("RM")) {
+                row[1] = "RM " + row[1];
+            }
+        }
 
         // Update table model
         table.setModel(new DefaultTableModel(dataArray, new String[]{"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"}));
