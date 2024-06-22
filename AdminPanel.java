@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,27 +44,9 @@ public class AdminPanel extends JFrame{
         JPanel headerPanel = showHeader(mainMenuFrame, "Admin Panel", username, backButtonAction);
         mainp.add(headerPanel, BorderLayout.NORTH);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        buttonPanel.setBackground(Color.LIGHT_GRAY);
-
-        JButton addButton = new JButton("Add New CD");
-        addButton.addActionListener(e -> {
-            // Handle add button action
-            System.out.println("Add button clicked");
-        });
-        buttonPanel.add(addButton);
-
-        // View Rental Record Button
-        JButton viewButton = new JButton("View Rental Record");
-        viewButton.addActionListener(e -> {
-            // Handle view rental record button action
-            System.out.println("View rental record button clicked");
-        });
-        buttonPanel.add(viewButton);
-
+        JPanel buttonPanel = createButtonPanel(mainMenuFrame);
         mainp.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Catalog Panel (Center)
         JPanel catalogPanel = catalogPanel(mainMenuFrame);
         mainp.add(catalogPanel, BorderLayout.CENTER);
         // Add mainPanel to JFrame
@@ -72,7 +56,43 @@ public class AdminPanel extends JFrame{
 
     }
 
-    //cd data
+    //for button below
+    private JPanel createButtonPanel(JFrame mainMenuFrame) {
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.setBackground(Color.LIGHT_GRAY);
+
+        // Add New CD Button
+        ImageIcon addIcon = new ImageIcon("image/add.png");
+        JButton addButton = new JButton("Add New CD", addIcon);
+        addButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        addButton.addActionListener(e -> showAddCDDialog(mainMenuFrame));
+        buttonPanel.add(addButton);
+
+        // View Rental Record Button
+        ImageIcon viewIcon = new ImageIcon("image/record.png");
+        JButton viewButton = new JButton("View Rental Record", viewIcon);
+        viewButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        viewButton.addActionListener(e -> {
+            // Handle view rental record button action
+            System.out.println("View rental record button clicked");
+        });
+        buttonPanel.add(viewButton);
+
+        // Manage Fee Button
+        ImageIcon feeIcon = new ImageIcon("image/fee.png");
+        JButton feeButton = new JButton("Manage Fee", feeIcon);
+        feeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        feeButton.addActionListener(e -> {
+            // Handle manage fee button action
+            System.out.println("Manage fee btn");
+        });
+        feeButton.setHorizontalAlignment(SwingConstants.RIGHT);
+        buttonPanel.add(feeButton);
+
+        return buttonPanel;
+    }
+
+    //cd data, inside include update and remove function
     private JPanel catalogPanel(JFrame mainMenuFrame){
         JPanel catalogPanel = new JPanel(new BorderLayout());
 
@@ -368,6 +388,104 @@ public class AdminPanel extends JFrame{
         }
         return parts.toArray(new String[0]);
     }
+
+    //for add cd
+    public void showAddCDDialog(JFrame mainMenuFrame){
+        JDialog cdInfoDialog = new JDialog(mainMenuFrame, "Add CD", true);
+        cdInfoDialog.setSize(400, 300);
+        cdInfoDialog.setLocationRelativeTo(mainMenuFrame);
+
+        JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+
+        JTextField cdNameField = new JTextField();
+        JTextField priceField = new JTextField();
+        JTextField stockField = new JTextField();
+        JComboBox<String> genreComboBox = new JComboBox<>(new String[]{"Comedy", "Crime", "Sci-Fi", "Drame", "Action", "Historical", "Music", "Classical", "Folk"}); 
+        JTextField distributorField = new JTextField();
+
+                       
+        infoPanel.add(new JLabel("CD Name: "));
+        infoPanel.add(cdNameField);
+        infoPanel.add(new JLabel("Price (RM) : "));
+        infoPanel.add(priceField);
+        infoPanel.add(new JLabel("Stock: "));
+        infoPanel.add(stockField);
+        infoPanel.add(new JLabel("Genre: "));
+        infoPanel.add(genreComboBox);
+        infoPanel.add(new JLabel("Distributor: "));
+        infoPanel.add(distributorField);
+
+        JButton addButton = new JButton("Save");
+        JButton cancelButton = new JButton("Cancel");
+
+        //this part for add
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
+                if (confirmUpdate == JOptionPane.YES_OPTION) {
+                String newCdName = cdNameField.getText().trim();
+                String newPrice = priceField.getText().trim();
+                String newStock = stockField.getText().trim();
+                String newGenre = (String) genreComboBox.getSelectedItem();
+                String newDistributor = distributorField.getText().trim();
+
+                if (newCdName.isEmpty() || newPrice.isEmpty() || newStock.isEmpty() || newDistributor.isEmpty()) {
+                    JOptionPane.showMessageDialog(cdInfoDialog, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                //validate price and stock
+                double price;
+                try {
+                    price = Double.parseDouble(newPrice);
+                    if (price < 0) {
+                        JOptionPane.showMessageDialog(cdInfoDialog, "Price CANNOT be in zero/negative value.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return; 
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(cdInfoDialog, "Invalid price format.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return; 
+                }
+
+                int stock;
+                try {
+                    stock = Integer.parseInt(newStock);
+                    if (stock <= 0) {
+                        JOptionPane.showMessageDialog(cdInfoDialog, "Stock must be a positive value.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return; 
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(cdInfoDialog, "Invalid stock format.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return; 
+                }
+
+                // Update data in memory
+                String[] updatedRow = {newCdName, newPrice, newStock, newGenre, newDistributor};
+
+                //go to a fucntion to add in cds.txt
+
+                reset();
+
+                // Show success message
+                JOptionPane.showMessageDialog(cdInfoDialog, "CD is added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                // Close the dialog
+                cdInfoDialog.dispose();
+            }
+        }
+    });
+
+                        
+
+    JPanel buttongrp = new JPanel();
+    buttongrp.add(addButton); buttongrp.add(cancelButton);
+
+    cdInfoDialog.add(infoPanel, BorderLayout.CENTER);
+    cdInfoDialog.add(buttongrp, BorderLayout.SOUTH);
+    cdInfoDialog.setVisible(true);
+}
+                
 
     //header
     private JPanel showHeader(JFrame mainMenuFrame, String title, String username, Runnable backButtonAction) {
