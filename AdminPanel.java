@@ -81,6 +81,18 @@ public class AdminPanel extends JFrame{
         JLabel infoLabel = new JLabel(" Click any row to update information or delete.");
         infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
+        ImageIcon refreshIcon = new ImageIcon("image/refresh.png");
+        JButton refreshButton = new JButton(refreshIcon);
+        refreshButton.setPreferredSize(new Dimension(30, 30));
+        refreshButton.setToolTipText("Refresh");
+        refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        refreshButton.setBackground(Color.WHITE); 
+
+        refreshButton.addActionListener(e -> {
+            // refresh table
+            reset();
+        });
+
         ImageIcon searchIcon = new ImageIcon("image/search.png");
         JButton searchButton = new JButton(searchIcon);
         searchButton.setPreferredSize(new Dimension(30, 30));
@@ -98,8 +110,12 @@ public class AdminPanel extends JFrame{
                 filter(searchInput.trim(), mainMenuFrame);
             }
         });
+
+        JPanel combinebtn = new JPanel();
+        combinebtn.add(refreshButton);
+        combinebtn.add(searchButton);
         searchButtonPanel.add(infoLabel, BorderLayout.WEST);
-        searchButtonPanel.add(searchButton, BorderLayout.EAST);
+        searchButtonPanel.add(combinebtn, BorderLayout.EAST);
 
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
         allData = readCDData();
