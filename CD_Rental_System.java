@@ -32,7 +32,10 @@ public class CD_Rental_System extends JFrame {
         panel.setLayout(new GridLayout(5, 1, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Add padding
         
-        JPanel HomePanel = showHome(panel); // Pass mainMenuFrame instance
+        showHome(panel); // Pass mainMenuFrame instance
+        add(panel);
+
+        setVisible(true);
         
     }
     
@@ -44,43 +47,70 @@ public class CD_Rental_System extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
+    
+        panel.setLayout(new BorderLayout());
+    
+        // Header panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
         JLabel welcomeLabel1 = new JLabel(new ImageIcon(logo), SwingConstants.CENTER);
-        panel.add(welcomeLabel1);
+        JLabel spacerLabel = new JLabel(" ");
         JLabel welcomeLabel2 = new JLabel("Retro CD Rental System", SwingConstants.CENTER);
-        panel.add(welcomeLabel2);
+        welcomeLabel2.setFont(new Font("SansSerif", Font.BOLD, 16));
+
+        headerPanel.add(welcomeLabel1, BorderLayout.NORTH);
+        headerPanel.add(spacerLabel, BorderLayout.CENTER);
+        headerPanel.add(welcomeLabel2, BorderLayout.SOUTH);
+
+    
+        // Button panel with register, login, and exit buttons
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JButton registerButton = new JButton("Register");
         JButton loginButton = new JButton("Login");
         JButton exitButton = new JButton("Exit");
 
-        panel.add(registerButton);
-        panel.add(loginButton);
-        panel.add(exitButton);
+        Dimension buttonSize = new Dimension(300, 100); // Example fixed size for all buttons
+        registerButton.setMaximumSize(buttonSize);
+        loginButton.setMaximumSize(buttonSize);
+        exitButton.setMaximumSize(buttonSize);
 
-        add(panel);
-        
+        registerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        exitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        buttonPanel.add(registerButton);
+        buttonPanel.add(Box.createVerticalStrut(10)); // Vertical spacing between buttons
+        buttonPanel.add(loginButton);
+        buttonPanel.add(Box.createVerticalStrut(10)); // Vertical spacing between buttons
+        buttonPanel.add(exitButton);
+    
+        // Add panels to main panel
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(buttonPanel, BorderLayout.CENTER);
+    
         registerButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showRegisterDialog();
             }
         });
-
+    
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showLoginDialog(new JFrame());
             }
         });
-
+    
         exitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
             }
         });
-        
+    
         return panel;
     }
 
