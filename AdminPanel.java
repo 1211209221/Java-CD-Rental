@@ -16,12 +16,14 @@ import javax.swing.table.DefaultTableModel;
 
 public class AdminPanel extends JFrame{
     String username;
+    private JTable table;
+    private List<String[]> allData;
 
     public AdminPanel(JFrame mainMenuFrame, String username){
         this.username = username;
 
         setTitle("Retro CD Rental System");
-        setSize(1000, 400);
+        setSize(910, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -29,7 +31,7 @@ public class AdminPanel extends JFrame{
         
         //Logout Button
         Runnable backButtonAction = () -> {
-            int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+            int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to log out?", "Confirm Logout", JOptionPane.YES_NO_OPTION);
             if (confirmDelete == JOptionPane.YES_OPTION) {
                 dispose(); // Close the current frame
                 CD_Rental_System newSystem = new CD_Rental_System(); // Create a new instance of CD_Rental_System
@@ -58,14 +60,6 @@ public class AdminPanel extends JFrame{
         });
         buttonPanel.add(viewButton);
 
-        //Edit CD Button
-        JButton editButton = new JButton("Edit CD");
-        editButton.addActionListener(e-> {
-            // Handle edit button action
-            System.out.println("Edit button clicked");
-        });
-        buttonPanel.add(editButton);
-
         mainp.add(buttonPanel, BorderLayout.SOUTH);
 
         // Catalog Panel (Center)
@@ -82,30 +76,41 @@ public class AdminPanel extends JFrame{
     private JPanel catalogPanel(JFrame mainMenuFrame){
         JPanel catalogPanel = new JPanel(new BorderLayout());
 
-        JPanel searchButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel searchButtonPanel = new JPanel(new BorderLayout());
+        searchButtonPanel.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5)); 
+        JLabel infoLabel = new JLabel(" Click any row to update information or delete.");
+        infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
         ImageIcon searchIcon = new ImageIcon("image/search.png");
         JButton searchButton = new JButton(searchIcon);
-        searchButton.setPreferredSize(new Dimension(24, 24));
+        searchButton.setPreferredSize(new Dimension(30, 30));
         searchButton.setToolTipText("Search");
         searchButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         searchButton.setBackground(Color.WHITE); 
 
         searchButton.addActionListener(e -> {
-            // Implement search functionality here
-            System.out.println("Search button clicked");
+            // search function
+            String searchInput = JOptionPane.showInputDialog(mainMenuFrame, "Enter CD Name to search:", "Search CD", JOptionPane.PLAIN_MESSAGE);
+            if (searchInput == null || searchInput.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(mainMenuFrame, "Search input cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                // Perform search and update table model
+                filter(searchInput.trim(), mainMenuFrame);
+            }
         });
-        searchButtonPanel.add(searchButton);
+        searchButtonPanel.add(infoLabel, BorderLayout.WEST);
+        searchButtonPanel.add(searchButton, BorderLayout.EAST);
 
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
-        List<String[]> data = readCDData();
-        String[][] dataArray = data.toArray(new String[0][]);
+        allData = readCDData();
+        String[][] dataArray = allData.toArray(new String[0][]);
 
         // Format prices with RM currency
         for (String[] row : dataArray) {
             row[1] = "RM " + row[1];
         }
 
-        JTable table = new JTable(dataArray, columnNames);
+        table = new JTable(dataArray, columnNames);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setDefaultEditor(Object.class, null);
         table.getColumnModel().getColumn(0).setPreferredWidth(300);
@@ -113,9 +118,12 @@ public class AdminPanel extends JFrame{
         table.getColumnModel().getColumn(2).setPreferredWidth(80);
         table.getColumnModel().getColumn(3).setPreferredWidth(140);
         table.getColumnModel().getColumn(4).setPreferredWidth(240);
-        //table.getColumnModel().getColumn(0).setPreferredWidth(20);
 
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK), // Add a black line border
+            BorderFactory.createEmptyBorder(0, 5, 0, 5) 
+        ));
         catalogPanel.add(searchButtonPanel, BorderLayout.NORTH);
         catalogPanel.add(scrollPane, BorderLayout.CENTER);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -140,10 +148,7 @@ public class AdminPanel extends JFrame{
                         JPanel infoPanel = new JPanel(new GridLayout(8, 2, 10, 5)); // Adjust rows, columns, and gaps
                         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
 
-                        int rowNum = 1;
-
-                        infoPanel.add(new JLabel("No: "));
-                        infoPanel.add(new JLabel(String.valueOf(rowNum++)));
+                       
                         infoPanel.add(new JLabel("CD Name: "));
                         infoPanel.add(new JLabel(cdName));
                         infoPanel.add(new JLabel("Price: "));
@@ -188,6 +193,41 @@ public class AdminPanel extends JFrame{
         });
 
         return catalogPanel;
+    }
+    private void filter(String searchInput, JFrame mainMenuFrame) {
+        // Retrieve data again
+        String[][] filteredDataArray = allData.stream()
+            .filter(row -> row[0].toLowerCase().contains(searchInput.toLowerCase()))
+            .toArray(String[][]::new);
+
+        if (filteredDataArray.length == 0) {
+            JOptionPane.showMessageDialog(mainMenuFrame, "No results found.", "Search Result", JOptionPane.INFORMATION_MESSAGE);
+            reset();
+            return;
+        }
+    
+        // Update table model
+        table.setModel(new DefaultTableModel(filteredDataArray, new String[] {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"}));
+    
+        // Adjust column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(300);
+        table.getColumnModel().getColumn(1).setPreferredWidth(120);
+        table.getColumnModel().getColumn(2).setPreferredWidth(80);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
+        table.getColumnModel().getColumn(4).setPreferredWidth(240);
+    }
+    private void reset() {
+        String[][] dataArray = allData.toArray(new String[0][]);
+
+        // Update table model
+        table.setModel(new DefaultTableModel(dataArray, new String[]{"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"}));
+
+        // Adjust column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(300);
+        table.getColumnModel().getColumn(1).setPreferredWidth(120);
+        table.getColumnModel().getColumn(2).setPreferredWidth(80);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
+        table.getColumnModel().getColumn(4).setPreferredWidth(240);
     }
     private List<String[]> readCDData() {
         List<String[]> data = new ArrayList<>();
