@@ -6,9 +6,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.*;
@@ -591,7 +589,7 @@ public class AdminPanel extends JFrame{
             }
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(menuFrame, "Error reading passrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(menuFrame, "Error reading pastrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
         }
 
 
@@ -703,37 +701,49 @@ public class AdminPanel extends JFrame{
 
     private void showFeeManagement(JFrame menuFrame) {
         //Create new Dialog
-        JDialog cdInfoDialog = new JDialog(menuFrame, "Fee Management", true);
-        cdInfoDialog.setSize(400, 300);
-        cdInfoDialog.setLocationRelativeTo(menuFrame);
+        JDialog feeDialog = new JDialog(menuFrame, "Fee Management", true);
+        feeDialog.setSize(400, 300);
+        feeDialog.setLocationRelativeTo(menuFrame);
+
+        //title panel 
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.setBackground(Color.WHITE);
+        ImageIcon logoIcon = new ImageIcon("image/fee.png"); 
+        JLabel titleLabel = new JLabel("Fee Management", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titlePanel.add(new JLabel(logoIcon));
+        titlePanel.add(titleLabel);
+
         //Create new Panel
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-        //Set button name
+        // Button panel for the buttons
+        JPanel buttonPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 0, 10, 0); // Add space between buttons
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Set button names
         JButton rentalFeeButton = new JButton("View Rental Fee");
         JButton penaltyFeeButton = new JButton("View Penalty Fee");
         JButton viewTotalRevenueButton = new JButton("View Total Revenue");
-        //Set button size
+
+        // Set button size
         Dimension buttonSize = new Dimension(200, 50);
         rentalFeeButton.setPreferredSize(buttonSize);
         penaltyFeeButton.setPreferredSize(buttonSize);
         viewTotalRevenueButton.setPreferredSize(buttonSize);
-        //Set button alignment
-        rentalFeeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        penaltyFeeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        viewTotalRevenueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        // Add vertical glue before the buttons to center them on Y axis
-        buttonPanel.add(Box.createVerticalGlue());
-        //Add space between buttons
-        buttonPanel.add(rentalFeeButton);
-        buttonPanel.add(Box.createVerticalStrut(10));
-        buttonPanel.add(penaltyFeeButton);
-        buttonPanel.add(Box.createVerticalStrut(10));
-        buttonPanel.add(viewTotalRevenueButton);
-        // Add vertical glue after the buttons to center them on Y axis
-        buttonPanel.add(Box.createVerticalGlue());
+
+        // Add buttons to the button panel with constraints
+        gbc.gridy = 0;
+        buttonPanel.add(rentalFeeButton, gbc);
+        gbc.gridy = 1;
+        buttonPanel.add(penaltyFeeButton, gbc);
+        gbc.gridy = 2;
+        buttonPanel.add(viewTotalRevenueButton, gbc);
+        
         // Add buttonPanel to the dialog
-        cdInfoDialog.add(buttonPanel, BorderLayout.CENTER);
+        feeDialog.add(buttonPanel, BorderLayout.CENTER);
+        feeDialog.add(titlePanel, BorderLayout.NORTH);
         //Event Listener for Fee Management
         rentalFeeButton.addActionListener(e -> {
             String currentFee = "";
@@ -748,10 +758,10 @@ public class AdminPanel extends JFrame{
                 String message = "The current rental fee is: RM" + formattedFee + ". Do you want to change it?";
                 Object[] options = {"Yes", "No"};
                 
-                int choice = JOptionPane.showOptionDialog(cdInfoDialog, message, "Rental Fee",
+                int choice = JOptionPane.showOptionDialog(feeDialog, message, "Rental Fee",
                         JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
                 if (choice == JOptionPane.YES_OPTION) {
-                    String newFee = JOptionPane.showInputDialog(cdInfoDialog, "Enter the new rental fee:");
+                    String newFee = JOptionPane.showInputDialog(feeDialog, "Enter the new rental fee:");
                     if (newFee != null)
                     {
                         // Validate the new fee
@@ -766,9 +776,9 @@ public class AdminPanel extends JFrame{
                             } catch (IOException writeFail) {
                                 writeFail.printStackTrace();
                             }
-                            JOptionPane.showMessageDialog(cdInfoDialog, "Rental fee successfully edited.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(feeDialog, "Rental fee successfully edited.", "Success", JOptionPane.INFORMATION_MESSAGE);
                         } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(cdInfoDialog, "Invalid fee format. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(feeDialog, "Invalid fee format. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 }
@@ -789,10 +799,10 @@ public class AdminPanel extends JFrame{
                 String message = "The current penalty fee is: RM" + formattedFee + ". Do you want to change it?";
                 Object[] options = {"Yes", "No"};
                 
-                int choice = JOptionPane.showOptionDialog(cdInfoDialog, message, "Penalty Fee",
+                int choice = JOptionPane.showOptionDialog(feeDialog, message, "Penalty Fee",
                         JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
                 if (choice == JOptionPane.YES_OPTION) {
-                    String newFee = JOptionPane.showInputDialog(cdInfoDialog, "Enter the new penalty fee:");
+                    String newFee = JOptionPane.showInputDialog(feeDialog, "Enter the new penalty fee:");
                     if (newFee != null)
                     {
                         try {
@@ -805,9 +815,9 @@ public class AdminPanel extends JFrame{
                             } catch (IOException writeFail) {
                                 writeFail.printStackTrace();
                             }
-                            JOptionPane.showMessageDialog(cdInfoDialog, "Penalty fee successfully edited.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(feeDialog, "Penalty fee successfully edited.", "Success", JOptionPane.INFORMATION_MESSAGE);
                         } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(cdInfoDialog, "Invalid fee format. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(feeDialog, "Invalid fee format. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 }
@@ -834,12 +844,12 @@ public class AdminPanel extends JFrame{
                 String message = "The Total Incurred Penalty Fees is RM " + oformattedFee + "\n" +
                                  "The Total Money Earned From Renting is RM " + formattedFee + "\n" +
                                  "Total Money Earned (including Penalty Fees) is RM " + totalformattedFee;
-                JOptionPane.showMessageDialog(cdInfoDialog, message, "Revenue Summary", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(feeDialog, message, "Revenue Summary", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException readfail) {
                 readfail.printStackTrace();
             }
         });
-        cdInfoDialog.setVisible(true);
+        feeDialog.setVisible(true);
     }
 
     //header

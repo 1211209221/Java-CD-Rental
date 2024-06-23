@@ -1,3 +1,9 @@
+//Benjamin Lim Kok Pin 1211209221
+//Kerk Ming Da 1211211733
+//Tan Yan San 1211108273
+//Yap Meng Yoon 1211110456
+//Group D1617
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
