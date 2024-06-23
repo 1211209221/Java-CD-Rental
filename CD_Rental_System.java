@@ -819,7 +819,7 @@ public class CD_Rental_System extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 rentCDs(username);
-                writeTotalToFile(finalTotalPrice, "Rental Fee");
+                writeTotalToFile(finalTotalPrice);
                 // Refresh the cart panel after renting
                 menuFrame.getContentPane().removeAll();
                 menuFrame.getContentPane().add(createCartPanel(menuFrame, username));
@@ -1315,7 +1315,7 @@ private void openReturnDialog(int selectedRow, DefaultTableModel model, String u
         removeRentedRecord(username, cdName, quantity);
 
         if ("Overdue".equals(status)) {
-            writeTotalToFile(penaltyFee, "Penalty Fee");
+            writePenaltyToFile(penaltyFee);
         }
         JOptionPane.showMessageDialog(null, "You have returned "+quantity+" copies of '"+cdName + "'. Thank you!");
     }
@@ -1414,20 +1414,88 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
     }
 }
 
-private void writeTotalToFile(double totalAmount, String notes) {
-    File earnedFile = new File("records/earned.txt");
+private void writeTotalToFile(double totalAmount) {
+    File feeFile = new File("records/fee.txt");
 
     // Ensure the records directory exists
-    if (!earnedFile.exists()) {
-        earnedFile.mkdir();
+    if (!feeFile.exists()) {
+        feeFile.mkdir();
     }
 
-    // Append the total amount earned to the earned file
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(earnedFile))) {
-        writer.write(String.format("%.2f", totalAmount) + " " + notes);
-        writer.newLine();
-    } catch (IOException e) {
+    try {
+        // Read the existing value from the file
+        String line;
+        if (feeFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(feeFile))) {
+                line = reader.readLine();
+            }
+        } else {
+            line = "0 0 0 0"; // Default line if file does not exist
+        }
+
+        // Split the line and update the last column value
+        String[] parts = line.split(" ");
+        double lastColumnValue = Double.parseDouble(parts[parts.length - 1]);
+        lastColumnValue += totalAmount;
+        parts[parts.length - 1] = String.format("%.2f", lastColumnValue);
+
+        // Reconstruct the updated line
+        StringBuilder updatedLine = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) updatedLine.append(" ");
+            updatedLine.append(parts[i]);
+        }
+
+        // Write the updated line back to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(feeFile))) {
+            writer.write(updatedLine.toString());
+            writer.newLine();
+        }
+    } catch (IOException | NumberFormatException e) {
         JOptionPane.showMessageDialog(null, "An error occurred while recording the total amount earned.", "Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}
+
+private void writePenaltyToFile(double penaltyAmount) {
+    File feeFile = new File("records/fee.txt");
+
+    // Ensure the records directory exists
+    if (!feeFile.exists()) {
+        feeFile.mkdirs();
+    }
+
+    try {
+        // Read the existing value from the file
+        String line;
+        if (feeFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(feeFile))) {
+                line = reader.readLine();
+            }
+        } else {
+            line = "0 0 0 0"; // Default line if file does not exist
+        }
+
+        // Split the line and update the third column value
+        String[] parts = line.split(" ");
+        double thirdColumnValue = Double.parseDouble(parts[2]);
+        thirdColumnValue += penaltyAmount;
+        parts[2] = String.format("%.2f", thirdColumnValue);
+
+        // Reconstruct the updated line
+        StringBuilder updatedLine = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) updatedLine.append(" ");
+            updatedLine.append(parts[i]);
+        }
+
+        // Write the updated line back to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(feeFile))) {
+            writer.write(updatedLine.toString());
+            writer.newLine();
+        }
+    } catch (IOException | NumberFormatException e) {
+        JOptionPane.showMessageDialog(null, "An error occurred while recording the penalty amount.", "Error", JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
     }
 }
