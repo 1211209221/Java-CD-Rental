@@ -48,7 +48,7 @@ public class CD_Rental_System extends JFrame {
         
     }
     
-    private JPanel showHome(JPanel panel) { // Corrected the parameter type to JPanel
+    private JPanel showHome(JPanel panel) {
 
         BufferedImage logo = null;
         try {
@@ -491,9 +491,9 @@ public class CD_Rental_System extends JFrame {
         JPanel catalogPanel = new JPanel(new BorderLayout());
         JPanel headerPanel = headerPanel(menuFrame, "Catalog", username, backButtonAction);
         catalogPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
-        JPanel mainp = new JPanel(new BorderLayout());
-        JPanel buttonPanel = createButtonPanel(menuFrame);
-        mainp.add(buttonPanel, BorderLayout.SOUTH);
+        // JPanel mainp = new JPanel(new BorderLayout());
+        // JPanel buttonPanel = createButtonPanel(menuFrame);
+        // mainp.add(buttonPanel, BorderLayout.SOUTH);
 
         // Add CD table
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
@@ -613,7 +613,7 @@ public class CD_Rental_System extends JFrame {
                                     }
 
                                     if ((cartNo+quantity) > availableStock) {
-                                        JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock. You have "+cartNo+" copies in your cart.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock of "+availableStock+". You already have "+cartNo+" copies in your cart.", "Error", JOptionPane.ERROR_MESSAGE);
                                         return; // Exit the method
                                     }
 
@@ -781,12 +781,14 @@ public class CD_Rental_System extends JFrame {
         cartTotalQuantityValueLabel.setText(String.valueOf(totalQuantity));
         cartTotalPriceValueLabel.setText(String.format("RM %.2f", totalPrice));
 
+        final double finalTotalPrice = totalPrice;
+
         JButton rentButton = new JButton("Rent");
         rentButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 rentCDs(username);
-                writeTotalToFile(totalPrice, "Rental Fee");
+                writeTotalToFile(finalTotalPrice, "Rental Fee");
                 // Refresh the cart panel after renting
                 menuFrame.getContentPane().removeAll();
                 menuFrame.getContentPane().add(createCartPanel(menuFrame, username));
@@ -886,10 +888,40 @@ public class CD_Rental_System extends JFrame {
                         JOptionPane.showMessageDialog(null, "Quantity and Days Rented must be greater than zero.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
                     } else {
                         int stockQuantity = getCDStock(cdName);
+                        int initialQuantity = Integer.parseInt(model.getValueAt(row, 1).toString());
+                        int cartNo = 0;
+
+                        try {
+                            File cartFile = new File("records/cart/" + username + ".txt");
+                            BufferedReader reader = new BufferedReader(new FileReader(cartFile));
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                // Splitting the line into parts based on spaces, but keep the CD name within double quotations intact
+                                String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+                                if (parts.length == 3) {
+                                    // Trim extra spaces and remove surrounding double quotations from CD name
+                                    parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+                
+                                    if (parts[0].equals(cdName)) {
+                                        cartNo = cartNo + Integer.parseInt(parts[1]);
+                                    }
+                                }
+                            }
+                            reader.close();
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+
+                        cartNo = cartNo - initialQuantity;
 
                         if (quantity > stockQuantity) {
                             JOptionPane.showMessageDialog(null, "Not enough stock available! " + stockQuantity + " left!");
                             continue; // Restart the loop to allow the user to enter valid input
+                        }
+
+                        if ((cartNo+quantity) > stockQuantity) {
+                            JOptionPane.showMessageDialog(null, "Requested quantity exceeds available stock of "+stockQuantity+". You already have "+cartNo+" other copies in your cart.", "Error", JOptionPane.ERROR_MESSAGE);
+                            return; // Exit the method
                         }
 
                         JOptionPane.showMessageDialog(null, "Item updated!");
@@ -954,94 +986,97 @@ public class CD_Rental_System extends JFrame {
     }
 
     private void rentCDs(String username) {
-    File cartDir = new File("records/cart");
-    File rentedDir = new File("records/rented");
-    if (!rentedDir.exists()) {
-        rentedDir.mkdir();
-    }
+        File cartDir = new File("records/cart");
+        File rentedDir = new File("records/rented");
+        if (!rentedDir.exists()) {
+            rentedDir.mkdir();
+        }
 
-    File userCartFile = new File(cartDir, username + ".txt");
-    File userRentedFile = new File(rentedDir, username + ".txt");
-    List<String> rentedCDs = new ArrayList<>();
+        File userCartFile = new File(cartDir, username + ".txt");
+        File userRentedFile = new File(rentedDir, username + ".txt");
+        List<String> rentedCDs = new ArrayList<>();
 
-    // Read CDs from user's cart
-    try (BufferedReader reader = new BufferedReader(new FileReader(userCartFile))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            // Splitting the line to get the CD name, quantity, and days rented
-            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
-            parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
-            String cdName = parts[0];
-            int quantity = Integer.parseInt(parts[1]);
-            int daysRented = Integer.parseInt(parts[2]);
-
-            // Calculate due date by adding days rented to the current date
-            LocalDate dueDate = LocalDate.now().plusDays(daysRented);
-
-            if (cdName.contains(" ")) {
-                cdName = "\"" + cdName + "\"";
+        // Check for overdue CDs
+        try (BufferedReader reader = new BufferedReader(new FileReader(userRentedFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                LocalDate dueDate = LocalDate.parse(parts[parts.length - 1]);
+                if (dueDate.isBefore(LocalDate.now())) {
+                    JOptionPane.showMessageDialog(this, "You have overdue CDs. Please return them before renting new ones.", "Overdue CDs", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
-
-            // Construct the line to be written to rented file (CD name, quantity, due date)
-            String rentedLine = cdName + " " + quantity + " " + dueDate;
-
-            // Add the constructed line to the list of rented CDs
-            rentedCDs.add(rentedLine);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "An error occurred while checking for overdue CDs.", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return;
         }
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "An error occurred while reading the cart file.", "Error", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-        return;
-    }
 
-    if (rentedCDs.isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Cart is empty!", "Error", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
+        // Read CDs from user's cart
+        try (BufferedReader reader = new BufferedReader(new FileReader(userCartFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Splitting the line to get the CD name, quantity, and days rented
+                String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+                parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+                String cdName = parts[0];
+                int quantity = Integer.parseInt(parts[1]);
+                int daysRented = Integer.parseInt(parts[2]);
 
-    // Write rented CDs to user's rented file
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(userRentedFile, true))) {
-        for (String rentedCD : rentedCDs) {
-            writer.write(rentedCD);
-            writer.newLine();
+                // Calculate due date by adding days rented to the current date
+                LocalDate dueDate = LocalDate.now().plusDays(daysRented);
+
+                if (cdName.contains(" ")) {
+                    cdName = "\"" + cdName + "\"";
+                }
+
+                // Construct the line to be written to rented file (CD name, quantity, due date)
+                String rentedLine = cdName + " " + quantity + " " + dueDate;
+
+                // Add the constructed line to the list of rented CDs
+                rentedCDs.add(rentedLine);
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "An error occurred while reading the cart file.", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return;
         }
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "An error occurred while storing the rented CDs into file.", "Error", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-        return;
-    }
 
-    updateInventory(rentedCDs);
+        if (rentedCDs.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Cart is empty!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-    // Clear the cart file
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(userCartFile))) {
-        writer.write("");
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "An error occurred while clearing the cart.", "Error", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-    }
+        // Write rented CDs to user's rented file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(userRentedFile, true))) {
+            for (String rentedCD : rentedCDs) {
+                writer.write(rentedCD);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "An error occurred while storing the rented CDs into file.", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return;
+        }
 
-    JOptionPane.showMessageDialog(this, "CDs rented successfully!");
-}    
+        int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to proceed renting these CDs?", "Confirm Rent CDs", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
 
-private void writeTotalToFile(double totalAmount, String notes) {
-    File earnedFile = new File("records/earned.txt");
+        updateInventory(rentedCDs);
 
-    // Ensure the records directory exists
-    if (!earnedFile.exists()) {
-        earnedFile.mkdir();
-    }
-
-    // Append the total amount earned to the earned file
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(earnedFile))) {
-        writer.write(String.format("%.2f", totalAmount) + " - " + notes);
-        writer.newLine();
-    } catch (IOException e) {
-        JOptionPane.showMessageDialog(null, "An error occurred while recording the total amount earned.", "Error", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-    }
-}
-
+        // Clear the cart file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(userCartFile))) {
+            writer.write("");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "An error occurred while clearing the cart.", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+        
+        JOptionPane.showMessageDialog(this, "CDs rented successfully!");
+    }    
 
 private void updateInventory(List<String> rentedCDs) {
     File cdsFile = new File("records/CDs.txt");
@@ -1199,7 +1234,6 @@ private JPanel RentedPanel(JFrame menuFrame, String username) {
 
     String currentPenalty = "";
     String filePath = "records/fee.txt";
-    double fee = 0.0;
     String formattedFee = "";
     try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
         String line = reader.readLine();
@@ -1249,6 +1283,7 @@ private void openReturnDialog(int selectedRow, DefaultTableModel model, String u
         if ("Overdue".equals(status)) {
             writeTotalToFile(penaltyFee, "Penalty Fee");
         }
+        JOptionPane.showMessageDialog(null, "You have returned "+quantity+" copies of '"+cdName + "'. Thank you!");
     }
 }
 
@@ -1342,6 +1377,24 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
     } catch (IOException ex) {
         JOptionPane.showMessageDialog(this, "Error writing to passrecord file.", "Error", JOptionPane.ERROR_MESSAGE);
         ex.printStackTrace();
+    }
+}
+
+private void writeTotalToFile(double totalAmount, String notes) {
+    File earnedFile = new File("records/earned.txt");
+
+    // Ensure the records directory exists
+    if (!earnedFile.exists()) {
+        earnedFile.mkdir();
+    }
+
+    // Append the total amount earned to the earned file
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(earnedFile))) {
+        writer.write(String.format("%.2f", totalAmount) + " " + notes);
+        writer.newLine();
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(null, "An error occurred while recording the total amount earned.", "Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
     }
 }
 
