@@ -317,7 +317,7 @@ public class CD_Rental_System extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 JPanel cartPanel = createCartPanel(menuFrame, username); // Pass menuFrame instance
                 menuFrame.getContentPane().removeAll(); // Clear previous content
-                menuFrame.add(cartPanel, BorderLayout.CENTER); // Add catalog panel
+                menuFrame.add(cartPanel, BorderLayout.CENTER); // Add cart panel
                 menuFrame.revalidate(); // Refresh frame
                 menuFrame.repaint(); // Repaint frame
             }
@@ -328,7 +328,7 @@ public class CD_Rental_System extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 JPanel rentedPanel = RentedPanel(menuFrame, username); // Pass menuFrame instance
                 menuFrame.getContentPane().removeAll(); // Clear previous content
-                menuFrame.add(rentedPanel, BorderLayout.CENTER); // Add catalog panel
+                menuFrame.add(rentedPanel, BorderLayout.CENTER); // Add rented panel
                 menuFrame.revalidate(); // Refresh frame
                 menuFrame.repaint(); // Repaint frame
             }
@@ -380,7 +380,6 @@ public class CD_Rental_System extends JFrame {
     
         return button;
     }
-    
     
     private static void showHeader(JFrame frame, String title, String username, Runnable backButtonAction) {
         JPanel titlePanel = new JPanel(new BorderLayout());
@@ -490,10 +489,11 @@ public class CD_Rental_System extends JFrame {
         
 
         JPanel catalogPanel = new JPanel(new BorderLayout());
-
         JPanel headerPanel = headerPanel(menuFrame, "Catalog", username, backButtonAction);
-
         catalogPanel.add(headerPanel, BorderLayout.NORTH); // Add back button to the top
+        JPanel mainp = new JPanel(new BorderLayout());
+        JPanel buttonPanel = createButtonPanel(menuFrame);
+        mainp.add(buttonPanel, BorderLayout.SOUTH);
 
         // Add CD table
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
@@ -581,10 +581,39 @@ public class CD_Rental_System extends JFrame {
                                         return; // Exit the method
                                     }
 
+                                    int cartNo = 0;
+
+                                    try {
+                                        File cartFile = new File("records/cart/" + username + ".txt");
+                                        BufferedReader reader = new BufferedReader(new FileReader(cartFile));
+                                        String line;
+                                        while ((line = reader.readLine()) != null) {
+                                            // Splitting the line into parts based on spaces, but keep the CD name within double quotations intact
+                                            String[] parts = line.split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
+                                            if (parts.length == 3) {
+                                                // Trim extra spaces and remove surrounding double quotations from CD name
+                                                parts[0] = parts[0].trim().replaceAll("^\"|\"$", "");
+                            
+                                                if (parts[0].equals(cdName)) {
+                                                    cartNo = cartNo + Integer.parseInt(parts[1]);
+                                                }
+                                            }
+                                        }
+                                        reader.close();
+                                    } catch (IOException ex) {
+                                        ex.printStackTrace();
+                                    }
+
                                     // Check if the requested quantity exceeds the available stock
                                     int availableStock = Integer.parseInt(stock);
+
                                     if (quantity > availableStock) {
                                         JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return; // Exit the method
+                                    }
+
+                                    if ((cartNo+quantity) > availableStock) {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock. You have "+cartNo+" copies in your cart.", "Error", JOptionPane.ERROR_MESSAGE);
                                         return; // Exit the method
                                     }
 
@@ -622,7 +651,7 @@ public class CD_Rental_System extends JFrame {
 
         return catalogPanel;
     }
-    
+
     private JLabel cartTotalQuantityValueLabel;
     private JLabel cartTotalPriceValueLabel;
     
@@ -708,20 +737,6 @@ public class CD_Rental_System extends JFrame {
         totalPricePanel.add(totalPriceTextLabel);
         totalPricePanel.add(cartTotalPriceValueLabel);
 
-        JButton rentButton = new JButton("Rent");
-        rentButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                rentCDs(username);
-                // Refresh the cart panel after renting
-                menuFrame.getContentPane().removeAll();
-                menuFrame.getContentPane().add(createCartPanel(menuFrame, username));
-                menuFrame.revalidate();
-                menuFrame.repaint();
-            }
-        });
-
-
         // Retrieve CDs information from file and populate table
         int totalQuantity = 0;
         double totalPrice = 0.0;
@@ -766,6 +781,20 @@ public class CD_Rental_System extends JFrame {
         cartTotalQuantityValueLabel.setText(String.valueOf(totalQuantity));
         cartTotalPriceValueLabel.setText(String.format("RM %.2f", totalPrice));
 
+        JButton rentButton = new JButton("Rent");
+        rentButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                rentCDs(username);
+                writeTotalToFile(totalPrice, "Rental Fee");
+                // Refresh the cart panel after renting
+                menuFrame.getContentPane().removeAll();
+                menuFrame.getContentPane().add(createCartPanel(menuFrame, username));
+                menuFrame.revalidate();
+                menuFrame.repaint();
+            }
+        });
+
         // Add components to summary panel
         summaryPanel.add(summaryLabel);
         summaryPanel.add(totalQuantityPanel);
@@ -778,7 +807,6 @@ public class CD_Rental_System extends JFrame {
         return cartPanel;
     }
 
-    
     // Method to open a dialog for editing quantity and days rented
     private void openEditDialog(int row, DefaultTableModel model, String username) {
         JPanel editPanel = new JPanel();
@@ -996,6 +1024,25 @@ public class CD_Rental_System extends JFrame {
     JOptionPane.showMessageDialog(this, "CDs rented successfully!");
 }    
 
+private void writeTotalToFile(double totalAmount, String notes) {
+    File earnedFile = new File("records/earned.txt");
+
+    // Ensure the records directory exists
+    if (!earnedFile.exists()) {
+        earnedFile.mkdir();
+    }
+
+    // Append the total amount earned to the earned file
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(earnedFile))) {
+        writer.write(String.format("%.2f", totalAmount) + " - " + notes);
+        writer.newLine();
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(null, "An error occurred while recording the total amount earned.", "Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}
+
+
 private void updateInventory(List<String> rentedCDs) {
     File cdsFile = new File("records/CDs.txt");
 
@@ -1198,6 +1245,10 @@ private void openReturnDialog(int selectedRow, DefaultTableModel model, String u
         model.removeRow(selectedRow);
         updateInventoryAfterReturn(cdName, quantity);
         removeRentedRecord(username, cdName, quantity);
+
+        if ("Overdue".equals(status)) {
+            writeTotalToFile(penaltyFee, "Penalty Fee");
+        }
     }
 }
 
