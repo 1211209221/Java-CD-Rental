@@ -1295,14 +1295,14 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
 }
 
     // Helper method to find the row index by CD name
-    private int findRowByCDName(String cdName, DefaultTableModel model) {
-        for (int i = 0; i < model.getRowCount(); i++) {
-            if (model.getValueAt(i, 0).equals(cdName)) {
-                return i;
-            }
-        }
-        return -1; // Not found
-    }
+    // private int findRowByCDName(String cdName, DefaultTableModel model) {
+    //     for (int i = 0; i < model.getRowCount(); i++) {
+    //         if (model.getValueAt(i, 0).equals(cdName)) {
+    //             return i;
+    //         }
+    //     }
+    //     return -1; // Not found
+    // }
 
     private List<String[]> readCDData() {
         List<String[]> data = new ArrayList<>();
