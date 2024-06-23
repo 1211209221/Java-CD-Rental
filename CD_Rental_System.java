@@ -445,29 +445,35 @@ public class CD_Rental_System extends JFrame {
     
     private float getCDPrice(String cdName) {
         float cdPrice = 0;
-        List<String[]> cdData = readCDData();
-
-        for (String[] cd : cdData) {
-            String cdNameFromFile = cd[0];
+        List<Object[]> cdData = readCDData();
+    
+        for (Object[] cd : cdData) {
+            Object cdNameFromFile = cd[0];
             if (cdName.equals(cdNameFromFile)) {
-                cdPrice = Float.parseFloat(cd[1]);
-                
+                try {
+                    cdPrice = Float.parseFloat(cd[1].toString()); // Convert Object to String and then parse to float
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid price format for CD: " + cdName);
+                    e.printStackTrace();
+                }
                 break;
             }
         }
-
+    
         return cdPrice;
-    }
+    }    
     
     private int getCDStock(String cdName) {
         int stockQuantity = 0;
-        List<String[]> cdData = readCDData();
-
-        for (String[] cd : cdData) {
-            String cdNameFromFile = cd[0];
+        List<Object[]> cdData = readCDData();
+    
+        for (Object[] cd : cdData) {
+            Object cdNameFromFile = cd[0];
             if (cdName.equals(cdNameFromFile)) {
+                // Assuming cd[2] is supposed to be the stock quantity as a String
+                String stockString = cd[2].toString().trim(); // Convert to String and trim whitespace
                 try {
-                    stockQuantity = Integer.parseInt(cd[2]);
+                    stockQuantity = Integer.parseInt(stockString);
                 } catch (NumberFormatException e) {
                     System.err.println("Invalid stock quantity format for CD: " + cdName);
                     e.printStackTrace();
@@ -475,9 +481,10 @@ public class CD_Rental_System extends JFrame {
                 break;
             }
         }
-
+    
         return stockQuantity;
     }
+    
 
     private JPanel createCatalogPanel(JFrame menuFrame, String username) {
         Runnable backButtonAction = () -> {
@@ -521,7 +528,11 @@ public class CD_Rental_System extends JFrame {
         DefaultTableCellRenderer priceRenderer = new DefaultTableCellRenderer() {
             @Override
             protected void setValue(Object value) {
-                setText(value == null ? "" : "RM " + value.toString());
+                if (value instanceof Double) {
+                    setText(String.format("RM %.2f", (Double) value));
+                } else {
+                    setText("RM");
+                }
             }
         };
         table.getColumnModel().getColumn(1).setCellRenderer(priceRenderer);
@@ -625,7 +636,7 @@ public class CD_Rental_System extends JFrame {
                                     }
 
                                     // Check if the requested quantity exceeds the available stock
-                                    int availableStock = Integer.parseInt(stock);
+                                    int availableStock = stock;
 
                                     if (quantity > availableStock) {
                                         JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1015,6 +1026,9 @@ public class CD_Rental_System extends JFrame {
         File userCartFile = new File(cartDir, username + ".txt");
         File userRentedFile = new File(rentedDir, username + ".txt");
         List<String> rentedCDs = new ArrayList<>();
+
+        userRentedFile = new File(rentedDir, username + ".txt"); // Re-instantiate to ensure up-to-date path reference
+        rentedCDs.clear(); // Clear the previously loaded data
 
         // Check for overdue CDs
         try (BufferedReader reader = new BufferedReader(new FileReader(userRentedFile))) {
