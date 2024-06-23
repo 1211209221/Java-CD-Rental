@@ -65,7 +65,7 @@ public class AdminPanel extends JFrame{
         };
         
         JPanel headerPanel = showHeader(menuFrame, "Admin Panel", username, backButtonAction);
-        headerPanel.setBackground(Color.LIGHT_GRAY);
+        headerPanel.setBackground(Color.WHITE);
         mainp.add(headerPanel, BorderLayout.NORTH);
 
         JPanel buttonPanel = createButtonPanel(menuFrame);
@@ -83,7 +83,7 @@ public class AdminPanel extends JFrame{
     //for button below
     private JPanel createButtonPanel(JFrame menuFrame) {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        buttonPanel.setBackground(Color.LIGHT_GRAY);
+        buttonPanel.setBackground(Color.WHITE);
 
         // Add New CD Button
         ImageIcon addIcon = new ImageIcon("image/add.png");
@@ -162,10 +162,6 @@ public class AdminPanel extends JFrame{
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
         allData = readCDData();
         String[][] dataArray = allData.toArray(new String[0][]);
-
-        int count = dataArray.length;
-        JLabel countresult = new JLabel(" Total CDs found: " + count);
-        searchButtonPanel.add(countresult, BorderLayout.SOUTH);
 
         // Format prices with RM currency
         for (String[] row : dataArray) {
@@ -567,6 +563,8 @@ public class AdminPanel extends JFrame{
 }
     //for view rental record
     private void viewrentalrecord(JFrame menuFrame) {
+        int recordcount = 0;
+
         File rentedFolder = new File("records/rented");
         File[] rentedFiles = rentedFolder.listFiles();
         List<String[]> rentalData = new ArrayList<>();
@@ -582,6 +580,7 @@ public class AdminPanel extends JFrame{
                     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
+                            recordcount++;
                             Matcher matcherWithQuotes = pattern.matcher(line);
                             Matcher matcherWithoutQuotes = patternWithoutQuotes.matcher(line);
                             if (matcherWithQuotes.matches()) {
@@ -617,6 +616,7 @@ public class AdminPanel extends JFrame{
         try (BufferedReader passRecordReader = new BufferedReader(new FileReader(passRecordFile))) {
             String line;
             while ((line = passRecordReader.readLine()) != null) {
+                recordcount++;
                 Matcher matcherWithQuotes = pattern.matcher(line);
                 Matcher matcherWithoutQuotes = patternWithoutQuotes.matcher(line);
                 if (matcherWithQuotes.find()) {
@@ -649,7 +649,7 @@ public class AdminPanel extends JFrame{
 
         for (String[] data : rentalData) {
             model.addRow(data);
-        }
+        }   
 
         JTable table = new JTable(model);
         table.setDefaultEditor(Object.class, null);
@@ -700,13 +700,21 @@ public class AdminPanel extends JFrame{
         rentalFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         //title for this frame
+        JPanel topPanel = new JPanel(new BorderLayout());
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        titlePanel.setBackground(Color.WHITE);
         ImageIcon logoIcon = new ImageIcon("image/record.png"); 
         JLabel titleLabel = new JLabel("Rental Record List", JLabel.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titlePanel.setBackground(Color.WHITE);
         titlePanel.add(new JLabel(logoIcon));
         titlePanel.add(titleLabel);
+        JLabel countLabel= new JLabel(" Total Rental Records: " + recordcount);
+        JPanel countPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        countPanel.add(countLabel);
+
+        topPanel.add(titlePanel,BorderLayout.NORTH);
+        topPanel.add(countPanel,BorderLayout.SOUTH);
+        
 
         //buttons
         // Create buttons panel
@@ -729,7 +737,7 @@ public class AdminPanel extends JFrame{
         completedButton.addActionListener(e -> filterrentedTable(model, rentalData, "Completed"));
 
         JPanel contentPane = new JPanel(new BorderLayout());
-        contentPane.add(titlePanel, BorderLayout.NORTH);
+        contentPane.add(topPanel, BorderLayout.NORTH);
         contentPane.add(scrollPane, BorderLayout.CENTER);
         contentPane.add(buttonPanel, BorderLayout.SOUTH);
 
