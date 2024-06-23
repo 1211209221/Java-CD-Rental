@@ -174,7 +174,7 @@ public class AdminPanel extends JFrame{
 
         table = new JTable(dataArray, columnNames);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        table.setDefaultEditor(Object.class, null);
+        table.setDefaultEditor(Object.class, null);//
 
         // ImageIcon originalIcon = new ImageIcon("image/sort_icon.png");
         // Image image = originalIcon.getImage().getScaledInstance(15, 15, Image.SCALE_SMOOTH);
