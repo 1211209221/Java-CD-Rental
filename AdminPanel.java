@@ -176,10 +176,10 @@ public class AdminPanel extends JFrame{
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setDefaultEditor(Object.class, null);//
 
-        // ImageIcon originalIcon = new ImageIcon("image/sort_icon.png");
-        // Image image = originalIcon.getImage().getScaledInstance(15, 15, Image.SCALE_SMOOTH);
-        // ImageIcon sortIcon = new ImageIcon(image);
-        // table.getTableHeader().setDefaultRenderer(new IconHeaderRenderer(sortIcon));
+        ImageIcon originalIcon = new ImageIcon("image/sort_icon.png");
+        Image image = originalIcon.getImage().getScaledInstance(15, 15, Image.SCALE_SMOOTH);
+        ImageIcon sortIcon = new ImageIcon(image);
+        table.getTableHeader().setDefaultRenderer(new IconHeaderRenderer(sortIcon));
 
         TableColumnModel columnModel = table.getColumnModel();
         columnModel.getColumn(0).setPreferredWidth(300);
@@ -188,11 +188,11 @@ public class AdminPanel extends JFrame{
         columnModel.getColumn(3).setPreferredWidth(140);
         columnModel.getColumn(4).setPreferredWidth(220);
 
-        // // Enable sorting
-        // table.setModel(new DefaultTableModel(dataArray, columnNames));
-        // TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
-        // table.setRowSorter(sorter);
-        // reset();
+        // Enable sorting
+        table.setModel(new DefaultTableModel(dataArray, columnNames));
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
+        table.setRowSorter(sorter);
+        reset();
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createCompoundBorder(
@@ -409,7 +409,12 @@ public class AdminPanel extends JFrame{
         }
 
         // Update table model
-        table.setModel(new DefaultTableModel(dataArray, new String[]{"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"}));
+        DefaultTableModel newModel = new DefaultTableModel(dataArray, new String[] {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"});
+        table.setModel(newModel);
+
+        // Re-apply TableRowSorter to the new model
+        TableRowSorter<TableModel> newSorter = new TableRowSorter<>(newModel);
+        table.setRowSorter(newSorter);
 
         // Adjust column widths
         table.getColumnModel().getColumn(0).setPreferredWidth(300);
