@@ -282,12 +282,24 @@ public class AdminPanel extends JFrame{
                                 int confirmUpdate = JOptionPane.showConfirmDialog(null, "Are you sure you want to update the changes?", "Confirm Updation", JOptionPane.YES_NO_OPTION);
                                 if (confirmUpdate == JOptionPane.YES_OPTION) {
 
+                                    //original data
+                                    String originalCdName = (String) table.getValueAt(selectedRow, 0);
+                                    String originalPrice = (String) table.getValueAt(selectedRow, 1);
+                                    String originalStock = (String) table.getValueAt(selectedRow, 2);
+                                    String originalGenre = (String) table.getValueAt(selectedRow, 3);
+                                    String originalDistributor = (String) table.getValueAt(selectedRow, 4);
+                                    // Read the file to find the line number of the original data
+                                    int lineNumber = findLineNumber(originalCdName, originalPrice, originalStock, originalGenre, originalDistributor);
+                                    if (lineNumber == -1) {
+                                        JOptionPane.showMessageDialog(null, "Original CD information not found in file.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return;
+                                    }
+
                                     // Update data in memory
                                     String[] updatedRow = {newCdName, newPrice, newStock, newGenre, newDistributor};
-                                    allData.set(selectedRow, updatedRow);
 
                                     // Save updated data to file (you need to implement this)
-                                    saveDataToFile(allData);
+                                    saveDataToFile(updatedRow, lineNumber);
 
                                     // Refresh table with updated data
                                     reset();
@@ -306,16 +318,33 @@ public class AdminPanel extends JFrame{
                             public void actionPerformed(ActionEvent e) {
                                 int confirmDelete = JOptionPane.showConfirmDialog(null, "Are you sure you want to remove this CD?", "Confirm Deletion", JOptionPane.YES_NO_OPTION);
                                 if (confirmDelete == JOptionPane.YES_OPTION) {
-                                    //remove the row from the array list
-                                    allData.remove(selectedRow);
-                                    saveDataToFile(allData);
-                                    
+                                    // Get original CD data from the table
+                                    String originalCdName = (String) table.getValueAt(selectedRow, 0);
+                                    String originalPrice = (String) table.getValueAt(selectedRow, 1);
+                                    String originalStock = (String) table.getValueAt(selectedRow, 2);
+                                    String originalGenre = (String) table.getValueAt(selectedRow, 3);
+                                    String originalDistributor = (String) table.getValueAt(selectedRow, 4);
+
+                                    // Find the line number of the original data in the file
+                                    int lineNumber = findLineNumber(originalCdName, originalPrice, originalStock, originalGenre, originalDistributor);
+                                    if (lineNumber == -1) {
+                                        JOptionPane.showMessageDialog(null, "Original CD information not found in file.", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return;
+                                    }
+
+                                    boolean deletionSuccess = deleteDataFromFile(lineNumber);
+                                    if (deletionSuccess) {
+                                        reset(); // Refresh table with updated data
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "CD removed successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                    } else {
+                                        JOptionPane.showMessageDialog(cdInfoDialog, "Failed to remove CD from file.", "Error", JOptionPane.ERROR_MESSAGE);
+                                    }
+                                    // Refresh table with updated data
                                     reset();
 
-                                    //success message
-                                    JOptionPane.showMessageDialog(cdInfoDialog, "CD removed successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
                                     // Close the dialog
                                     cdInfoDialog.dispose();
+                                
                                 }
                             }
                         });
@@ -340,22 +369,170 @@ public class AdminPanel extends JFrame{
 
         return catalogPanel;
     }
+    // Method to find the line number in the file that matches the original data
+    private int findLineNumber(String originalCdName, String originalPrice, String originalStock, String originalGenre, String originalDistributor) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) {
+            String line;
+            int lineNumber = 0;
+            while ((line = reader.readLine()) != null) {
+                List<String> parts = parseLineforUpdateDelete(line);
+                if (parts.size() >= 5) {
+                    String cdName = parts.get(0);
+                    String price = parts.get(1);
+                    String stock = parts.get(2);
+                    String genre = parts.get(3);
+                    String distributor = parts.get(4);
+
+                    originalPrice = price.replace("RM ", "");
+
+                    if (cdName.equals(originalCdName) && price.equals(originalPrice) && stock.equals(originalStock)
+                            && genre.equals(originalGenre) && distributor.equals(originalDistributor)) {
+                                
+                        return lineNumber; // Found the line number
+                    }
+                }
+                lineNumber++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return -1; // Original data not found
+    }
+    // Method to parse a line from the file into parts
+    private List<String> parseLineforUpdateDelete(String line) {
+        List<String> parts = new ArrayList<>();
+        Matcher matcher = Pattern.compile("\"([^\"]*)\"|(\\S+)").matcher(line);
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                parts.add(matcher.group(1));
+            } else {
+                parts.add(matcher.group(2));
+            }
+        }
+        return parts;
+    }
+
     //for update cd information
-    private void saveDataToFile(List<String[]> data) {
-
-        try (BufferedWriter putin = new BufferedWriter(new FileWriter("records/CDs.txt"))) {
-            for (String[] row : data) {
-                String priceString = row[1].replace("RM ", "");
-                double price = Double.parseDouble(priceString);
-                int stock = Integer.parseInt(row[2]);
-
-                putin.write(String.format("\"%s\" %.2f %d %s \"%s\"",
-                row[0], price, stock, row[3], row[4]));
-                putin.newLine();
+    private void saveDataToFile(String[] updatedRow, int lineNumber) {
+        File file = new File("records/CDs.txt");
+        File tempFile = new File("records/CDs_temp.txt");
+    
+        try (BufferedReader reader = new BufferedReader(new FileReader(file));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+    
+            String line;
+            int currentLine = 0;
+    
+            // Copy all lines from original file to temp file, updating the specified line
+            while ((line = reader.readLine()) != null) {
+                if (currentLine == lineNumber) {
+                    // Update the line with new data
+                    String priceString = updatedRow[1].replace("RM ", "");
+                    double price = Double.parseDouble(priceString);
+                    int stock = Integer.parseInt(updatedRow[2]);
+    
+                    writer.write(String.format("\"%s\" %.2f %d %s \"%s\"",
+                            updatedRow[0], price, stock, updatedRow[3], updatedRow[4]));
+                    writer.newLine();
+                } else {
+                    // Copy unchanged line to temp file
+                    writer.write(line);
+                    writer.newLine();
+                }
+                currentLine++;
             }
         } catch (IOException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Error saving data to file.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+    
+        // Replace the original file with the temp file
+        if (!file.delete()) {
+            JOptionPane.showMessageDialog(null, "Error updating data in file.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!tempFile.renameTo(file)) {
+            JOptionPane.showMessageDialog(null, "Error updating data in file.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    //for delete
+    private boolean deleteDataFromFile(int lineNumber) {
+        File inputFile = new File("records/CDs.txt");
+        File tempFile = new File("records/CDs_temp.txt");
+    
+        BufferedReader reader = null;
+        BufferedWriter writer = null;
+    
+        try {
+            reader = new BufferedReader(new FileReader(inputFile));
+            writer = new BufferedWriter(new FileWriter(tempFile));
+    
+            String lineToRemove = "";
+            String currentLine;
+            int lineNum = 0;
+    
+            while ((currentLine = reader.readLine()) != null) {
+                if (lineNum == lineNumber) {
+                    lineToRemove = currentLine;
+                    break;
+                }
+                lineNum++;
+            }
+    
+            // If lineToRemove is empty, the line was not found
+            if (lineToRemove.isEmpty()) {
+                System.err.println("Line to delete not found.");
+                return false;
+            }
+    
+            // Reset reader to beginning of the file
+            reader.close();
+            reader = new BufferedReader(new FileReader(inputFile));
+            lineNum = 0;
+    
+            // Rewrite the file excluding the line to be deleted
+            while ((currentLine = reader.readLine()) != null) {
+                // Don't write the line to remove to the temporary file
+                if (lineNum != lineNumber) {
+                    writer.write(currentLine + System.getProperty("line.separator"));
+                }
+                lineNum++;
+            }
+    
+            // Close resources
+            reader.close();
+            writer.close();
+    
+            // Delete original file
+            if (!inputFile.delete()) {
+                System.err.println("Failed to delete the original file.");
+                return false;
+            }
+    
+            // Rename the temporary file to the original file name
+            if (!tempFile.renameTo(inputFile)) {
+                System.err.println("Failed to rename the temporary file.");
+                return false;
+            }
+    
+            return true; // Deletion successful
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Close resources in finally block to ensure they are always closed
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
     //for search 
@@ -388,6 +565,7 @@ public class AdminPanel extends JFrame{
     }
     //for reset table
     private void reset() {
+        allData = readCDData();
         String[][] dataArray = allData.toArray(new String[0][]);
         DecimalFormat decimalFormat = new DecimalFormat("#0.00");
         
