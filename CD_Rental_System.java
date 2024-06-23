@@ -497,15 +497,35 @@ public class CD_Rental_System extends JFrame {
 
         // Add CD table
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
-        List<String[]> data = readCDData();
-        String[][] dataArray = data.toArray(new String[0][]);
+        List<Object[]> data = readCDData();
+        Object[][] dataArray = data.toArray(new Object[0][]);
 
-        // Format prices with RM currency
-        for (String[] row : dataArray) {
-            row[1] = "RM " + row[1];
-        }
+        DefaultTableModel model = new DefaultTableModel(dataArray, columnNames) {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                switch (column) {
+                    case 0: return String.class; // CD Name
+                    case 1: return Double.class; // Price (displayed with RM prefix)
+                    case 2: return Integer.class; // Stock
+                    case 3: return String.class; // Genre
+                    case 4: return String.class; // Distributor
+                    default: return Object.class;
+                }
+            }
+        };
 
-        JTable table = new JTable(dataArray, columnNames);
+        // Create the JTable
+        JTable table = new JTable(model);
+        table.setAutoCreateRowSorter(true); // Enable sorting
+
+        DefaultTableCellRenderer priceRenderer = new DefaultTableCellRenderer() {
+            @Override
+            protected void setValue(Object value) {
+                setText(value == null ? "" : "RM " + value.toString());
+            }
+        };
+        table.getColumnModel().getColumn(1).setCellRenderer(priceRenderer);
+
         JScrollPane scrollPane = new JScrollPane(table);
         catalogPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -527,8 +547,8 @@ public class CD_Rental_System extends JFrame {
                     if (selectedRow != -1) { // Ensure a row is selected
                         // Extract CD information from the selected row
                         String cdName = (String) table.getValueAt(selectedRow, 0);
-                        String price = (String) table.getValueAt(selectedRow, 1);
-                        String stock = (String) table.getValueAt(selectedRow, 2);
+                        Double price = (Double) table.getValueAt(selectedRow, 1);
+                        int stock = (int) table.getValueAt(selectedRow, 2);
                         String genre = (String) table.getValueAt(selectedRow, 3);
                         String distributor = (String) table.getValueAt(selectedRow, 4);
 
@@ -544,9 +564,9 @@ public class CD_Rental_System extends JFrame {
                         infoPanel.add(new JLabel("CD Name: "));
                         infoPanel.add(new JLabel(cdName));
                         infoPanel.add(new JLabel("Price: "));
-                        infoPanel.add(new JLabel(price));
+                        infoPanel.add(new JLabel(String.format("RM %.2f", price)));
                         infoPanel.add(new JLabel("Stock: "));
-                        infoPanel.add(new JLabel(stock));
+                        infoPanel.add(new JLabel(String.valueOf(stock)));
                         infoPanel.add(new JLabel("Genre: "));
                         infoPanel.add(new JLabel(genre));
                         infoPanel.add(new JLabel("Distributor: "));
@@ -1408,21 +1428,27 @@ private void writeTotalToFile(double totalAmount, String notes) {
     //     return -1; // Not found
     // }
 
-    private List<String[]> readCDData() {
-        List<String[]> data = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) { // Corrected file name
+    private List<Object[]> readCDData() {
+        List<Object[]> data = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = parseLine(line);
                 if (parts.length == 5) {
-                    data.add(parts);
+                    String cdName = parts[0].trim();
+                    double price = Double.parseDouble(parts[1].trim());
+                    int stock = Integer.parseInt(parts[2].trim());
+                    String genre = parts[3].trim();
+                    String distributor = parts[4].trim();
+                    data.add(new Object[]{cdName, price, stock, genre, distributor});
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
         }
         return data;
     }
+
 
     private String[] parseLine(String line) {
         List<String> parts = new ArrayList<>();
