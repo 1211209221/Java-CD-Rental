@@ -376,7 +376,12 @@ public class AdminPanel extends JFrame{
         }
     
         // Update table model
-        table.setModel(new DefaultTableModel(filteredDataArray, new String[] {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"}));
+        DefaultTableModel newModel = new DefaultTableModel(filteredDataArray, new String[] {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"});
+        table.setModel(newModel);
+
+        // Re-apply TableRowSorter to the new model
+        TableRowSorter<TableModel> newSorter = new TableRowSorter<>(newModel);
+        table.setRowSorter(newSorter);
     
         // Adjust column widths
         table.getColumnModel().getColumn(0).setPreferredWidth(300);
