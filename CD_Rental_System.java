@@ -1031,11 +1031,25 @@ public class CD_Rental_System extends JFrame {
         rentedCDs.clear(); // Clear the previously loaded data
 
         // Check if the file exists
+        if (!userCartFile.exists()) {
+            try {
+                // Attempt to create the file
+                boolean cartIsCreated = userCartFile.createNewFile();
+                if (cartIsCreated) {
+                    System.out.println("File created successfully.");
+                } else {
+                    System.out.println("File already exists.");
+                }
+            } catch (IOException e) {
+                System.out.println("An error occurred while creating the file.");
+                e.printStackTrace();
+            }
+        }
         if (!userRentedFile.exists()) {
             try {
                 // Attempt to create the file
-                boolean isCreated = userRentedFile.createNewFile();
-                if (isCreated) {
+                boolean rentIsCreated = userRentedFile.createNewFile();
+                if (rentIsCreated) {
                     System.out.println("File created successfully.");
                 } else {
                     System.out.println("File already exists.");
