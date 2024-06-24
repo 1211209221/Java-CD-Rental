@@ -1030,6 +1030,22 @@ public class CD_Rental_System extends JFrame {
         userRentedFile = new File(rentedDir, username + ".txt"); // Re-instantiate to ensure up-to-date path reference
         rentedCDs.clear(); // Clear the previously loaded data
 
+        // Check if the file exists
+        if (!userRentedFile.exists()) {
+            try {
+                // Attempt to create the file
+                boolean isCreated = userRentedFile.createNewFile();
+                if (isCreated) {
+                    System.out.println("File created successfully.");
+                } else {
+                    System.out.println("File already exists.");
+                }
+            } catch (IOException e) {
+                System.out.println("An error occurred while creating the file.");
+                e.printStackTrace();
+            }
+        }
+
         // Check for overdue CDs
         try (BufferedReader reader = new BufferedReader(new FileReader(userRentedFile))) {
             String line;
@@ -1042,7 +1058,7 @@ public class CD_Rental_System extends JFrame {
                 }
             }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "An error occurred while checking for overdue CDs.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No file detected.", "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
             return;
         }
