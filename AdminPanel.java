@@ -1107,9 +1107,9 @@ public class AdminPanel extends JFrame{
         titlePanel.add(pageTitleLabel, BorderLayout.CENTER);
         
         ImageIcon usericon = new ImageIcon("image/usericon.png");
-        JLabel welcomeLabel = new JLabel(username, usericon, SwingConstants.RIGHT);
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 13));
-        titlePanel.add(welcomeLabel, BorderLayout.EAST);
+        JLabel userLabel = new JLabel(username, usericon, SwingConstants.RIGHT);
+        userLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        titlePanel.add(userLabel, BorderLayout.EAST);
     
         titlePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     
