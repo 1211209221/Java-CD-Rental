@@ -445,29 +445,35 @@ public class CD_Rental_System extends JFrame {
     
     private float getCDPrice(String cdName) {
         float cdPrice = 0;
-        List<String[]> cdData = readCDData();
-
-        for (String[] cd : cdData) {
-            String cdNameFromFile = cd[0];
+        List<Object[]> cdData = readCDData();
+    
+        for (Object[] cd : cdData) {
+            Object cdNameFromFile = cd[0];
             if (cdName.equals(cdNameFromFile)) {
-                cdPrice = Float.parseFloat(cd[1]);
-                
+                try {
+                    cdPrice = Float.parseFloat(cd[1].toString()); // Convert Object to String and then parse to float
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid price format for CD: " + cdName);
+                    e.printStackTrace();
+                }
                 break;
             }
         }
-
+    
         return cdPrice;
-    }
+    }    
     
     private int getCDStock(String cdName) {
         int stockQuantity = 0;
-        List<String[]> cdData = readCDData();
-
-        for (String[] cd : cdData) {
-            String cdNameFromFile = cd[0];
+        List<Object[]> cdData = readCDData();
+    
+        for (Object[] cd : cdData) {
+            Object cdNameFromFile = cd[0];
             if (cdName.equals(cdNameFromFile)) {
+                // Assuming cd[2] is supposed to be the stock quantity as a String
+                String stockString = cd[2].toString().trim(); // Convert to String and trim whitespace
                 try {
-                    stockQuantity = Integer.parseInt(cd[2]);
+                    stockQuantity = Integer.parseInt(stockString);
                 } catch (NumberFormatException e) {
                     System.err.println("Invalid stock quantity format for CD: " + cdName);
                     e.printStackTrace();
@@ -475,9 +481,10 @@ public class CD_Rental_System extends JFrame {
                 break;
             }
         }
-
+    
         return stockQuantity;
     }
+    
 
     private JPanel createCatalogPanel(JFrame menuFrame, String username) {
         Runnable backButtonAction = () -> {
@@ -497,15 +504,39 @@ public class CD_Rental_System extends JFrame {
 
         // Add CD table
         String[] columnNames = {"CD Name", "Price (RM)", "Stock", "Genre", "Distributor"};
-        List<String[]> data = readCDData();
-        String[][] dataArray = data.toArray(new String[0][]);
+        List<Object[]> data = readCDData();
+        Object[][] dataArray = data.toArray(new Object[0][]);
 
-        // Format prices with RM currency
-        for (String[] row : dataArray) {
-            row[1] = "RM " + row[1];
-        }
+        DefaultTableModel model = new DefaultTableModel(dataArray, columnNames) {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                switch (column) {
+                    case 0: return String.class; // CD Name
+                    case 1: return Double.class; // Price (displayed with RM prefix)
+                    case 2: return Integer.class; // Stock
+                    case 3: return String.class; // Genre
+                    case 4: return String.class; // Distributor
+                    default: return Object.class;
+                }
+            }
+        };
 
-        JTable table = new JTable(dataArray, columnNames);
+        // Create the JTable
+        JTable table = new JTable(model);
+        table.setAutoCreateRowSorter(true); // Enable sorting
+
+        DefaultTableCellRenderer priceRenderer = new DefaultTableCellRenderer() {
+            @Override
+            protected void setValue(Object value) {
+                if (value instanceof Double) {
+                    setText(String.format("RM %.2f", (Double) value));
+                } else {
+                    setText("RM");
+                }
+            }
+        };
+        table.getColumnModel().getColumn(1).setCellRenderer(priceRenderer);
+
         JScrollPane scrollPane = new JScrollPane(table);
         catalogPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -527,8 +558,8 @@ public class CD_Rental_System extends JFrame {
                     if (selectedRow != -1) { // Ensure a row is selected
                         // Extract CD information from the selected row
                         String cdName = (String) table.getValueAt(selectedRow, 0);
-                        String price = (String) table.getValueAt(selectedRow, 1);
-                        String stock = (String) table.getValueAt(selectedRow, 2);
+                        Double price = (Double) table.getValueAt(selectedRow, 1);
+                        int stock = (int) table.getValueAt(selectedRow, 2);
                         String genre = (String) table.getValueAt(selectedRow, 3);
                         String distributor = (String) table.getValueAt(selectedRow, 4);
 
@@ -544,9 +575,9 @@ public class CD_Rental_System extends JFrame {
                         infoPanel.add(new JLabel("CD Name: "));
                         infoPanel.add(new JLabel(cdName));
                         infoPanel.add(new JLabel("Price: "));
-                        infoPanel.add(new JLabel(price));
+                        infoPanel.add(new JLabel(String.format("RM %.2f", price)));
                         infoPanel.add(new JLabel("Stock: "));
-                        infoPanel.add(new JLabel(stock));
+                        infoPanel.add(new JLabel(String.valueOf(stock)));
                         infoPanel.add(new JLabel("Genre: "));
                         infoPanel.add(new JLabel(genre));
                         infoPanel.add(new JLabel("Distributor: "));
@@ -605,7 +636,7 @@ public class CD_Rental_System extends JFrame {
                                     }
 
                                     // Check if the requested quantity exceeds the available stock
-                                    int availableStock = Integer.parseInt(stock);
+                                    int availableStock = stock;
 
                                     if (quantity > availableStock) {
                                         JOptionPane.showMessageDialog(cdInfoDialog, "Requested quantity exceeds available stock.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -788,7 +819,7 @@ public class CD_Rental_System extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 rentCDs(username);
-                writeTotalToFile(finalTotalPrice, "Rental Fee");
+                writeTotalToFile(finalTotalPrice);
                 // Refresh the cart panel after renting
                 menuFrame.getContentPane().removeAll();
                 menuFrame.getContentPane().add(createCartPanel(menuFrame, username));
@@ -996,6 +1027,25 @@ public class CD_Rental_System extends JFrame {
         File userRentedFile = new File(rentedDir, username + ".txt");
         List<String> rentedCDs = new ArrayList<>();
 
+        userRentedFile = new File(rentedDir, username + ".txt"); // Re-instantiate to ensure up-to-date path reference
+        rentedCDs.clear(); // Clear the previously loaded data
+
+        // Check if the file exists
+        if (!userRentedFile.exists()) {
+            try {
+                // Attempt to create the file
+                boolean isCreated = userRentedFile.createNewFile();
+                if (isCreated) {
+                    System.out.println("File created successfully.");
+                } else {
+                    System.out.println("File already exists.");
+                }
+            } catch (IOException e) {
+                System.out.println("An error occurred while creating the file.");
+                e.printStackTrace();
+            }
+        }
+
         // Check for overdue CDs
         try (BufferedReader reader = new BufferedReader(new FileReader(userRentedFile))) {
             String line;
@@ -1008,7 +1058,7 @@ public class CD_Rental_System extends JFrame {
                 }
             }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "An error occurred while checking for overdue CDs.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No file detected.", "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
             return;
         }
@@ -1281,7 +1331,7 @@ private void openReturnDialog(int selectedRow, DefaultTableModel model, String u
         removeRentedRecord(username, cdName, quantity);
 
         if ("Overdue".equals(status)) {
-            writeTotalToFile(penaltyFee, "Penalty Fee");
+            writePenaltyToFile(penaltyFee);
         }
         JOptionPane.showMessageDialog(null, "You have returned "+quantity+" copies of '"+cdName + "'. Thank you!");
     }
@@ -1380,20 +1430,88 @@ private void removeRentedRecord(String username, String cdName, int quantity) {
     }
 }
 
-private void writeTotalToFile(double totalAmount, String notes) {
-    File earnedFile = new File("records/earned.txt");
+private void writeTotalToFile(double totalAmount) {
+    File feeFile = new File("records/fee.txt");
 
     // Ensure the records directory exists
-    if (!earnedFile.exists()) {
-        earnedFile.mkdir();
+    if (!feeFile.exists()) {
+        feeFile.mkdir();
     }
 
-    // Append the total amount earned to the earned file
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(earnedFile))) {
-        writer.write(String.format("%.2f", totalAmount) + " " + notes);
-        writer.newLine();
-    } catch (IOException e) {
+    try {
+        // Read the existing value from the file
+        String line;
+        if (feeFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(feeFile))) {
+                line = reader.readLine();
+            }
+        } else {
+            line = "0 0 0 0"; // Default line if file does not exist
+        }
+
+        // Split the line and update the last column value
+        String[] parts = line.split(" ");
+        double lastColumnValue = Double.parseDouble(parts[parts.length - 1]);
+        lastColumnValue += totalAmount;
+        parts[parts.length - 1] = String.format("%.2f", lastColumnValue);
+
+        // Reconstruct the updated line
+        StringBuilder updatedLine = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) updatedLine.append(" ");
+            updatedLine.append(parts[i]);
+        }
+
+        // Write the updated line back to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(feeFile))) {
+            writer.write(updatedLine.toString());
+            writer.newLine();
+        }
+    } catch (IOException | NumberFormatException e) {
         JOptionPane.showMessageDialog(null, "An error occurred while recording the total amount earned.", "Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}
+
+private void writePenaltyToFile(double penaltyAmount) {
+    File feeFile = new File("records/fee.txt");
+
+    // Ensure the records directory exists
+    if (!feeFile.exists()) {
+        feeFile.mkdirs();
+    }
+
+    try {
+        // Read the existing value from the file
+        String line;
+        if (feeFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(feeFile))) {
+                line = reader.readLine();
+            }
+        } else {
+            line = "0 0 0 0"; // Default line if file does not exist
+        }
+
+        // Split the line and update the third column value
+        String[] parts = line.split(" ");
+        double thirdColumnValue = Double.parseDouble(parts[2]);
+        thirdColumnValue += penaltyAmount;
+        parts[2] = String.format("%.2f", thirdColumnValue);
+
+        // Reconstruct the updated line
+        StringBuilder updatedLine = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) updatedLine.append(" ");
+            updatedLine.append(parts[i]);
+        }
+
+        // Write the updated line back to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(feeFile))) {
+            writer.write(updatedLine.toString());
+            writer.newLine();
+        }
+    } catch (IOException | NumberFormatException e) {
+        JOptionPane.showMessageDialog(null, "An error occurred while recording the penalty amount.", "Error", JOptionPane.ERROR_MESSAGE);
         e.printStackTrace();
     }
 }
@@ -1408,21 +1526,27 @@ private void writeTotalToFile(double totalAmount, String notes) {
     //     return -1; // Not found
     // }
 
-    private List<String[]> readCDData() {
-        List<String[]> data = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) { // Corrected file name
+    private List<Object[]> readCDData() {
+        List<Object[]> data = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader("records/CDs.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = parseLine(line);
                 if (parts.length == 5) {
-                    data.add(parts);
+                    String cdName = parts[0].trim();
+                    double price = Double.parseDouble(parts[1].trim());
+                    int stock = Integer.parseInt(parts[2].trim());
+                    String genre = parts[3].trim();
+                    String distributor = parts[4].trim();
+                    data.add(new Object[]{cdName, price, stock, genre, distributor});
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
         }
         return data;
     }
+
 
     private String[] parseLine(String line) {
         List<String> parts = new ArrayList<>();
